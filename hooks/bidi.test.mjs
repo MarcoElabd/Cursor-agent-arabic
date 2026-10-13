@@ -1,4 +1,6 @@
 import { spawn } from 'node:child_process'
+import { mkdtempSync, writeFileSync } from 'node:fs'
+import { tmpdir } from 'node:os'
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { dirname, join } from 'node:path'
@@ -36,13 +38,16 @@ test('keeps code fences and shapes only Arabic prose', () => {
   assert.equal(prose.trim().length > 0, true)
 })
 
-test('visual mode is the default and native mode overrides terminal detection', () => {
+test('auto mode shapes only terminals without BiDi', () => {
   assert.equal(lacksBidi({ TERM_PROGRAM: 'vscode', TERM: 'xterm-256color' }), true)
   assert.equal(lacksBidi({ TERM: 'xterm-kitty' }), true)
   assert.equal(lacksBidi({ TERM: 'xterm-256color', ALACRITTY_WINDOW_ID: '1' }), true)
   assert.equal(lacksBidi({ TERM: 'xterm-256color' }), false)
+  assert.equal(wantsVisual({ TERM_PROGRAM: 'vscode' }), true)
+  assert.equal(wantsVisual({ TERM: 'xterm-256color', WT_SESSION: '1' }), false)
+  assert.equal(wantsVisual({}), false)
+  assert.equal(wantsVisual({ ARABIC_RTL: 'visual' }), true)
   assert.equal(wantsVisual({ ARABIC_RTL: 'native', TERM_PROGRAM: 'vscode' }), false)
-  assert.equal(wantsVisual({}), true)
 })
 
 test('shape command prints presentation forms', async () => {
@@ -56,6 +61,22 @@ test('shape command prints presentation forms', async () => {
   child.stdin.end('سلام\n')
   const code = await new Promise((resolve) => child.on('close', resolve))
   assert.equal(code, 0)
+  assert.equal(out.includes('سلام'), false)
+  assert.equal(out.includes('ﺳ'), true)
+})
+
+test('shape command reads a UTF-8 reply file', async () => {
+  const dir = mkdtempSync(join(tmpdir(), 'cursor-arabic-'))
+  const file = join(dir, 'reply.txt')
+  writeFileSync(file, 'سلام\n', 'utf8')
+  const child = spawn(process.execPath, [join(root, 'hooks', 'shape.mjs'), file], {
+    env: { ...process.env, COLUMNS: '40', ARABIC_RTL: 'visual' },
+    stdio: ['ignore', 'pipe', 'pipe'],
+  })
+  let out = ''
+  child.stdout.setEncoding('utf8')
+  child.stdout.on('data', (chunk) => { out += chunk })
+  assert.equal(await new Promise((resolve) => child.on('close', resolve)), 0)
   assert.equal(out.includes('سلام'), false)
   assert.equal(out.includes('ﺳ'), true)
 })

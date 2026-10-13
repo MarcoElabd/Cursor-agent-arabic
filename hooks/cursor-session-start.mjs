@@ -1,13 +1,22 @@
 import { readFileSync } from 'node:fs'
+import { tmpdir } from 'node:os'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { wantsVisual } from './bidi.mjs'
-import { shellQuote } from './shell.mjs'
+import { shapeCommand } from './shell.mjs'
 
 // Cursor closes stdin after the hook payload. Drain it before doing any work.
 const chunks = []
 for await (const chunk of process.stdin) chunks.push(chunk)
+const rawInput = Buffer.concat(chunks.map((c) => typeof c === 'string' ? Buffer.from(c) : c)).toString('utf8')
+
+let input = {}
+try {
+  input = JSON.parse(rawInput || '{}')
+} catch {
+  input = {}
+}
 
 const here = dirname(fileURLToPath(import.meta.url))
 const raw = readFileSync(join(here, '..', 'rules', 'arabic.mdc'), 'utf8')
@@ -19,15 +28,27 @@ if (!body) {
 
 const shape = join(here, 'shape.mjs')
 const display = wantsVisual(process.env)
-  ? [
-      'Arabic display: visual',
-      `Shape command: node ${shellQuote(shape)}`,
-      ...(process.platform === 'win32' ? [
-        'PowerShell UTF-8 setup: [Console]::OutputEncoding = $OutputEncoding = [System.Text.UTF8Encoding]::new($false)',
-        'Run that setup in the same shell command BEFORE piping Arabic to Node. Use a single-quoted here-string for the reply so backticks and dollar signs remain literal.',
-      ] : []),
-      'Cursor may still request shell approval. Respect its permission prompt; do not claim the command is already approved.',
+  ? visualDisplay(shape, input)
+  : [
+      'Arabic display: native',
+      'Write Arabic in normal logical order. Do not reshape it and do not run the shape command.',
+      'This is the mode for PowerShell in Windows Terminal and for the Cursor chat.',
     ].join('\n')
-  : 'Arabic display: native'
 
-process.stdout.write(`${JSON.stringify({ additional_context: `${body}\n\n${display}` })}\n`)
+const additional_context = `${body}\n\n${display}`
+const isPrompt = input.hook_event_name === 'beforeSubmitPrompt' || typeof input.prompt === 'string'
+const output = isPrompt ? { continue: true, additional_context } : { additional_context }
+process.stdout.write(`${JSON.stringify(output)}\n`)
+
+function visualDisplay(shapePath, hookInput) {
+  const id = String(hookInput.conversation_id || hookInput.session_id || 'reply')
+  const safe = id.replace(/[^A-Za-z0-9_-]/g, '').slice(0, 80) || 'reply'
+  const file = join(tmpdir(), `cursor-arabic-${safe}.txt`).replaceAll('\\', '/')
+  return [
+    'Arabic display: visual',
+    `Reply file: ${file}`,
+    'Write the full reply to Reply file with the file tool, as UTF-8, before the shape command. Do not create that file in PowerShell, and do not pipe Arabic into Node.',
+    `Shape command: ${shapeCommand(shapePath, file)}`,
+    'Cursor may still request shell approval. After success, the user-visible message is only the command stdout, copied exactly, including leading spaces. Do not also print the unshaped Arabic.',
+  ].join('\n')
+}

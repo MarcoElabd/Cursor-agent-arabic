@@ -1,5 +1,5 @@
 ---
-description: Reply and think in Arabic, and shape Arabic for the Cursor Agent screen.
+description: Reply and think in Arabic, and shape Arabic only when the Cursor screen cannot draw it.
 alwaysApply: true
 ---
 
@@ -7,7 +7,7 @@ Always answer the user in Arabic (Modern Standard Arabic, or the dialect the use
 Keep code, terminal commands, file paths, identifiers and English-only technical terms in English, inside backticks.
 Prefer bullet lists over markdown tables.
 Do your internal reasoning / thinking in Arabic as well.
-Some Cursor Agent terminal screens draw characters from left to right, so normal Arabic can look reversed and disconnected.
+Some Cursor Agent terminal screens draw characters from left to right, so normal Arabic can look reversed and disconnected. PowerShell in Windows Terminal, and the Cursor chat, already draw Arabic correctly.
 Follow the `Arabic display:` line in the session context.
-When it says `visual`, compose the reply in normal Arabic and pipe it to the shape command on stdin. On Windows PowerShell, run the `PowerShell UTF-8 setup:` command from the session context before the pipeline, in the same shell execution. Pass the reply using a single-quoted here-string, preserving backticks and dollar signs literally. On other shells, use a quoted heredoc. Respect Cursor's shell permission prompts; the plugin cannot guarantee that a command is already approved. After successful execution, the user-visible message must be only the command's stdout, copied exactly, including leading spaces. Do not also print the unshaped Arabic. If the command fails or permission is declined, explain the failure rather than claiming the display is fixed.
 When it says `native`, or when no shape command is given, write Arabic in normal logical order and do not reshape it.
+When it says `visual`, write the reply to the `Reply file:` path with the file tool as UTF-8. On Windows PowerShell, do not put Arabic on the command line and do not pipe Arabic into Node; Windows PowerShell 5.1 would turn it into question marks. Run the `Shape command:` from the session context exactly. That command reads the file. On Windows it also sets UTF-8 output in the same shell execution. Respect Cursor's shell permission prompts; the plugin cannot guarantee that a command is already approved. After successful execution, the user-visible message must be only the command's stdout, copied exactly, including leading spaces. Do not also print the unshaped Arabic. If the command fails or permission is declined, explain the failure rather than claiming the display is fixed.

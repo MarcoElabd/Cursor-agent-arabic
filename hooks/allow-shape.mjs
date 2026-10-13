@@ -1,6 +1,6 @@
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { shellQuote } from './shell.mjs'
+import { isAllowedShapeCommand } from './shell.mjs'
 
 let raw = ''
 for await (const chunk of process.stdin) raw += chunk
@@ -13,8 +13,8 @@ try {
   command = ''
 }
 
-// Only the exact local renderer is eligible. Pipelines, extra arguments,
-// other scripts with the same filename, and compound commands need review.
+// Only the local renderer is eligible: alone, or with one reply file.
+// Pipelines, extra arguments, other scripts, and compound commands need review.
 const shape = join(dirname(fileURLToPath(import.meta.url)), 'shape.mjs')
-const allowed = command.trim() === `node ${shellQuote(shape)}`
+const allowed = isAllowedShapeCommand(command, shape)
 process.stdout.write(`${JSON.stringify({ permission: allowed ? 'allow' : 'ask' })}\n`)

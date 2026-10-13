@@ -1,10 +1,10 @@
 import { spawn } from 'node:child_process'
-import { readFileSync } from 'node:fs'
+import { readFileSync, writeFileSync } from 'node:fs'
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { fileURLToPath } from 'node:url'
 import { dirname, join } from 'node:path'
-import { shellQuote } from './shell.mjs'
+import { isAllowedShapeCommand, shapeCommand, shellQuote } from './shell.mjs'
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..')
 const readJson = (path) => JSON.parse(readFileSync(join(root, path), 'utf8'))
@@ -43,7 +43,7 @@ test('sessionStart hook runs the Cursor script', () => {
   const hooks = readJson('hooks/hooks.json')
   assert.equal(hooks.version, 1)
   assert.equal(hooks.hooks.sessionStart[0].command, 'node ./hooks/cursor-session-start.mjs')
-  assert.equal(hooks.hooks.beforeSubmitPrompt, undefined)
+  assert.equal(hooks.hooks.beforeSubmitPrompt[0].command, 'node ./hooks/cursor-session-start.mjs')
   assert.equal(hooks.hooks.beforeShellExecution[0].command, 'node ./hooks/allow-shape.mjs')
 })
 
@@ -94,6 +94,74 @@ test('sessionStart hook emits the rule body as additional_context', async () => 
   assert.equal(parsed.additional_context.startsWith(body), true)
   assert.match(parsed.additional_context, /Arabic display: visual/)
   assert.match(parsed.additional_context, /hooks\/shape\.mjs/)
+  assert.match(parsed.additional_context, /^Reply file: .+\.txt$/m)
+  assert.equal(parsed.additional_context.includes('|'), false)
+  assert.equal(parsed.continue, undefined)
+})
+
+test('PowerShell in Windows Terminal stays on logical Arabic', async () => {
+  const env = { ...process.env, TERM: 'xterm-256color', WT_SESSION: 'wt' }
+  delete env.ARABIC_RTL
+  delete env.TERM_PROGRAM
+  delete env.ALACRITTY_WINDOW_ID
+  const child = spawn(process.execPath, [join(root, 'hooks', 'cursor-session-start.mjs')], {
+    env,
+    stdio: ['pipe', 'pipe', 'pipe'],
+  })
+  let out = ''
+  child.stdout.setEncoding('utf8')
+  child.stdout.on('data', (chunk) => { out += chunk })
+  child.stdin.end(JSON.stringify({ session_id: 'ps', composer_mode: 'agent' }))
+  assert.equal(await new Promise((resolve) => child.on('close', resolve)), 0)
+  const parsed = JSON.parse(out)
+  assert.match(parsed.additional_context, /Arabic display: native/)
+  assert.equal(/^Shape command: /m.test(parsed.additional_context), false)
+})
+
+test('beforeSubmitPrompt keeps the prompt and repeats the display mode', async () => {
+  const child = spawn(process.execPath, [join(root, 'hooks', 'cursor-session-start.mjs')], {
+    env: { ...process.env, ARABIC_RTL: 'visual' },
+    stdio: ['pipe', 'pipe', 'pipe'],
+  })
+  let out = ''
+  child.stdout.setEncoding('utf8')
+  child.stdout.on('data', (chunk) => { out += chunk })
+  child.stdin.end(JSON.stringify({
+    hook_event_name: 'beforeSubmitPrompt',
+    prompt: 'اشرح لي git status',
+    conversation_id: 'chat-1',
+  }))
+  assert.equal(await new Promise((resolve) => child.on('close', resolve)), 0)
+  const parsed = JSON.parse(out)
+  assert.equal(parsed.continue, true)
+  assert.match(parsed.additional_context, /Arabic display: visual/)
+  assert.match(parsed.additional_context, /cursor-arabic-chat-1\.txt/)
+})
+
+test('Windows shape command reads a UTF-8 file and never takes Arabic from the pipeline', () => {
+  const shape = "C:\\Users\\O'Brien\\$HOME\\arabic plugin\\shape.mjs"
+  const file = "C:\\Users\\O'Brien\\$HOME\\cursor-arabic-reply.txt"
+  const command = shapeCommand(shape, file, 'win32')
+  assert.equal(command.includes('سلام'), false)
+  assert.equal(command.includes('|'), false)
+  assert.equal(isAllowedShapeCommand(command, shape, 'win32'), true)
+  assert.equal(isAllowedShapeCommand(`'سلام' | node ${shellQuote(shape, 'win32')}`, shape, 'win32'), false)
+  assert.equal(isAllowedShapeCommand(`${command}; Remove-Item ${shellQuote(file, 'win32')}`, shape, 'win32'), false)
+})
+
+test('permission hook allows the renderer plus one reply file', async () => {
+  const shapePath = join(root, 'hooks', 'shape.mjs')
+  const file = join(root, 'reply.txt')
+  const command = `node ${shellQuote(shapePath)} ${shellQuote(file)}`
+  const child = spawn(process.execPath, [join(root, 'hooks', 'allow-shape.mjs')], {
+    stdio: ['pipe', 'pipe', 'pipe'],
+  })
+  let out = ''
+  child.stdout.setEncoding('utf8')
+  child.stdout.on('data', (chunk) => { out += chunk })
+  child.stdin.end(JSON.stringify({ command }))
+  assert.equal(await new Promise((resolve) => child.on('close', resolve)), 0)
+  assert.deepEqual(JSON.parse(out), { permission: 'allow' })
 })
 
 test('hook does not allow commands merely mentioning shape.mjs', async () => {
@@ -101,6 +169,7 @@ test('hook does not allow commands merely mentioning shape.mjs', async () => {
   for (const command of [
     'node "/other-plugin/hooks/shape.mjs"',
     `node '${shapePath}'; node -e "process.exit(0)"`,
+    `'سلام' | node '${shapePath}'`,
     'echo shape.mjs',
   ]) {
     const child = spawn(process.execPath, [join(root, 'hooks', 'allow-shape.mjs')], {
@@ -115,7 +184,7 @@ test('hook does not allow commands merely mentioning shape.mjs', async () => {
   }
 })
 
-test('Windows session instructions preserve Arabic through PowerShell 5.1', {
+test('Windows visual mode shapes a UTF-8 file through PowerShell 5.1', {
   skip: process.platform !== 'win32',
 }, async () => {
   const hook = spawn(process.execPath, [join(root, 'hooks', 'cursor-session-start.mjs')], {
@@ -128,11 +197,13 @@ test('Windows session instructions preserve Arabic through PowerShell 5.1', {
   hook.stdin.end('{}')
   assert.equal(await new Promise((resolve) => hook.on('close', resolve)), 0)
   const body = JSON.parse(context).additional_context
-  const setup = body.match(/^PowerShell UTF-8 setup: (.+)$/m)?.[1]
+  const file = body.match(/^Reply file: (.+)$/m)?.[1]
   const command = body.match(/^Shape command: (.+)$/m)?.[1]
-  assert.ok(setup, 'Windows context must configure the native-command pipeline as UTF-8')
+  assert.ok(file)
   assert.ok(command)
-  const child = spawn('powershell.exe', ['-NoProfile', '-Command', `${setup}; 'سلام' | ${command}`], {
+  assert.equal(command.includes('|'), false)
+  writeFileSync(file, 'سلام\n', 'utf8')
+  const child = spawn('powershell.exe', ['-NoProfile', '-Command', command], {
     stdio: ['ignore', 'pipe', 'pipe'],
   })
   let out = ''

@@ -109,13 +109,15 @@ export const lacksBidi = (env) =>
   /kitty|alacritty/.test(env.TERM ?? '') ||
   env.ALACRITTY_WINDOW_ID !== undefined
 
-/** Cursor Agent lays glyphs in left-to-right cells. Shape unless the user opts out. */
+/**
+ * Same auto mode as the Claude Code plugin.
+ * Windows Terminal and the Cursor chat draw Arabic themselves, so PowerShell
+ * stays on logical Arabic unless the terminal is known to lack BiDi.
+ */
 export function wantsVisual(env) {
   if (env.ARABIC_RTL === 'native') return false
   if (env.ARABIC_RTL === 'visual') return true
-  if (lacksBidi(env)) return true
-  if (env.CURSOR_CLI || env.CURSOR_AGENT) return true
-  return true
+  return lacksBidi(env)
 }
 
 /** Reply text for a non-BiDi screen. Code fences stay as written. */
