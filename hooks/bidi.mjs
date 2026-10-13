@@ -1,5 +1,8 @@
 // Arabic for a screen that draws characters left to right: shape letters into
-// presentation forms, then lay each line out in visual cell order.
+// presentation forms, then lay each line out with Smart RTL directional spans
+// (inspired by https://github.com/mirbehnam/RtlTerminal).
+
+import { containsRightToLeft, getDirectionalSpans } from './smart-rtl.mjs'
 
 // Joining class per letter, U+0621..U+063A then U+0641..U+064A, in the same order
 // as their forms in U+FE80..U+FEF4: 1 = isolated only, 2 = right-joining, 4 = dual.
@@ -41,37 +44,31 @@ export function shape(text) {
   return String.fromCodePoint(...out)
 }
 
-const dirOf = (ch) =>
-  /[٠-٩۰-۹]/.test(ch) ? 'L'
-  : /[؀-ۿݐ-ݿﭐ-﷿ﹰ-﻿]/.test(ch) ? 'R'
-  : /[\p{L}\p{N}]/u.test(ch) ? 'L' : 'N'
 const MIRROR = { '(': ')', ')': '(', '[': ']', ']': '[', '{': '}', '}': '{', '<': '>', '>': '<', '«': '»', '»': '«' }
 
-export const isRtl = (line) => Array.from(line).map(dirOf).find((d) => d !== 'N') === 'R'
+export const isRtl = (line) => containsRightToLeft(line)
 
-/** One already-shaped line, logical order in, visual order out. */
+/**
+ * Logical Arabic (or already-shaped forms) → visual cell order using Smart RTL spans.
+ * RTL spans are shaped into presentation forms, then reversed for LTR cell painters.
+ */
 export function reorder(line) {
   const chars = Array.from(line)
-  const base = isRtl(line) ? 'R' : 'L'
-  const dirs = chars.map(dirOf)
-  for (let i = 0; i < dirs.length; ) {
-    if (dirs[i] !== 'N') { i++; continue }
-    let j = i
-    while (j < dirs.length && dirs[j] === 'N') j++
-    const before = i > 0 ? dirs[i - 1] : base
-    const after = j < dirs.length ? dirs[j] : base
-    dirs.fill(before === after ? before : base, i, j)
-    i = j
-  }
-  const runs = []
-  chars.forEach((ch, i) => {
-    const last = runs[runs.length - 1]
-    const d = dirs[i]
-    if (last && last.d === d) last.s.push(ch)
-    else runs.push({ d, s: [ch] })
+  if (chars.length === 0) return ''
+  const baseRtl = isRtl(line)
+  const spans = getDirectionalSpans(line, baseRtl)
+  const parts = spans.map((span) => {
+    const slice = chars.slice(span.start, span.start + span.length).join('')
+    if (!span.isRtl) return slice
+    // Shape only logical Arabic letters; presentation forms pass through shape() unchanged.
+    const shaped = hasArabic(slice) ? shape(slice) : slice
+    return Array.from(shaped)
+      .reverse()
+      .map((c) => MIRROR[c] ?? c)
+      .join('')
   })
-  if (base === 'R') runs.reverse()
-  return runs.map((r) => r.d === 'R' ? r.s.reverse().map((c) => MIRROR[c] ?? c).join('') : r.s.join('')).join('')
+  if (baseRtl) parts.reverse()
+  return parts.join('')
 }
 
 /** Greedy word wrap to `width` cells; a word longer than a line is cut. */
@@ -94,28 +91,31 @@ export function wrap(line, width) {
 
 /** A logical line to the visual lines a non-BiDi screen draws. RTL lines are right-aligned. */
 export function visualLines(line, width) {
-  const shaped = shape(line)
-  const rtl = isRtl(shaped)
-  return wrap(shaped, width).map((l) => {
-    const v = reorder(l)
-    return rtl ? v.padStart(width) : v
-  })
+  const rtl = isRtl(line)
+  // Shape inside reorder per RTL span so English runs stay untouched (RtlTerminal style).
+  const visual = reorder(line)
+  return wrap(visual, width).map((l) => (rtl ? l.padStart(width) : l))
 }
 
 // Terminals known to draw Arabic unjoined and left to right.
-// Anything else is trusted to do BiDi itself, unless ARABIC_RTL overrides it.
 export const lacksBidi = (env) =>
   /^(vscode|wezterm|ghostty)$/i.test(env.TERM_PROGRAM ?? '') ||
   /kitty|alacritty/.test(env.TERM ?? '') ||
   env.ALACRITTY_WINDOW_ID !== undefined
 
+/** Hosts that already paint Arabic/RTL (e.g. RtlTerminal with Smart RTL on). */
+export const hasNativeRtl = (env) =>
+  env.ARABIC_RTL === 'native' ||
+  env.RTLTERMINAL === '1' ||
+  /rtlterminal/i.test(env.TERM_PROGRAM ?? '')
+
 /**
  * The Cursor CLI paints one character per cell from left to right, so logical
  * Arabic looks disconnected and reversed there. Shape on Windows unless the
- * user opts out. Other systems shape only for terminals known to lack BiDi.
+ * user opts out or runs inside a native-RTL host such as RtlTerminal.
  */
 export function wantsVisual(env, platform = process.platform) {
-  if (env.ARABIC_RTL === 'native') return false
+  if (hasNativeRtl(env)) return false
   if (env.ARABIC_RTL === 'visual') return true
   if (platform === 'win32' || env.OS === 'Windows_NT') return true
   return lacksBidi(env)

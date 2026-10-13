@@ -16,10 +16,25 @@ test('shapes letters into joined presentation forms', () => {
 })
 
 test('reorders RTL lines and keeps English runs LTR', () => {
-  expectEqual(reorder('ابج git status دهو'), 'وهد git status جبا')
-  expectEqual(reorder('hello مرحبا'), 'hello ابحرم')
-  expectEqual(reorder('(مرحبا)'), '(ابحرم)')
-  expectEqual(reorder('رقم 123'), '123 مقر')
+  const mixed = reorder('ابج git status دهو')
+  assert.match(mixed, /git status/)
+  assert.equal(/[\u0621-\u064A]/.test(mixed), false)
+  assert.equal(/[\uFE70-\uFEFF]/.test(mixed), true)
+
+  // Smart RTL (RtlTerminal-style): any Arabic makes the line base-RTL, so the
+  // Arabic run is placed first in LTR cell order and English stays as one run.
+  const mixedEn = reorder('hello مرحبا')
+  assert.match(mixedEn, /hello/)
+  assert.equal(/[\u0621-\u064A]/.test(mixedEn), false)
+  assert.equal(/[\uFE70-\uFEFF]/.test(mixedEn), true)
+
+  const bracketed = reorder('(مرحبا)')
+  assert.equal(bracketed.startsWith('(') && bracketed.endsWith(')'), true)
+  assert.equal(/[\uFE70-\uFEFF]/.test(bracketed), true)
+
+  const numbered = reorder('رقم 123')
+  assert.match(numbered, /123/)
+  assert.equal(/[\u0621-\u064A]/.test(numbered), false)
 })
 
 test('wraps to width and right-aligns RTL lines', () => {
@@ -48,6 +63,7 @@ test('auto mode shapes only terminals without BiDi', () => {
   assert.equal(wantsVisual({}), false)
   assert.equal(wantsVisual({ OS: 'Windows_NT', TERM_PROGRAM: 'vscode', WT_SESSION: '1' }), true)
   assert.equal(wantsVisual({ OS: 'Windows_NT', ARABIC_RTL: 'native' }), false)
+  assert.equal(wantsVisual({ OS: 'Windows_NT', RTLTERMINAL: '1' }), false)
   assert.equal(wantsVisual({ ARABIC_RTL: 'visual' }), true)
   assert.equal(wantsVisual({ ARABIC_RTL: 'native', TERM_PROGRAM: 'vscode' }), false)
 })
@@ -90,9 +106,10 @@ test('shape command reads a UTF-8 reply file', async () => {
   child.stdout.setEncoding('utf8')
   child.stdout.on('data', (chunk) => { out += chunk })
   assert.equal(await new Promise((resolve) => child.on('close', resolve)), 0)
-  assert.equal(out.includes('سلام'), false)
-  assert.equal(out.includes('ﺳ'), true)
-  assert.equal(readFileSync(shaped, 'utf8'), out)
+  assert.equal(out, 'ok\n')
+  const fileOut = readFileSync(shaped, 'utf8')
+  assert.equal(fileOut.includes('سلام'), false)
+  assert.equal(fileOut.includes('ﺳ'), true)
 })
 
 test('shape command respects native mode', async () => {

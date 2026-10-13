@@ -30,7 +30,7 @@ To try it locally, copy the repository to `~/.cursor/plugins/local/arabic`, run 
 | التفكير | بالعربية. Reasoning stays in Arabic. |
 | الكود | الأوامر والمسارات والمعرّفات والمصطلحات الإنجليزية تبقى بالإنجليزية داخل `` ` ``. Commands, paths, identifiers, and English-only terms stay in English, inside backticks. |
 | التنسيق | قوائم نقطية بدل الجداول. Bullet lists instead of markdown tables. |
-| اتجاه النص | الـ CLI بيرسم كل حرف في خانة من الشمال لليمين، فالعربي العادي يظهر مقطّع ومقلوب. الرد يتشكّل قبل العرض. The CLI paints each character in a cell from left to right, so normal Arabic looks disconnected and reversed. The reply is shaped before display. |
+| اتجاه النص | الـ CLI بيرسم كل حرف في خانة من الشمال لليمين، فالعربي العادي يظهر مقطّع ومقلوب. الرد يتشكّل بـ Smart RTL + أشكال العرض قبل الظهور. The CLI paints each character in a cell from left to right, so normal Arabic looks disconnected and reversed. The reply is laid out with Smart RTL spans and presentation forms before display. |
 
 التعليمات في `rules/arabic.mdc` وتُطبَّق دائمًا. عند بداية الجلسة يعيد `hooks/cursor-session-start.mjs` نفس النص إلى Cursor. لو `node` غير موجود في `PATH` تظل القاعدة وحدها كافية.
 The instructions live in `rules/arabic.mdc` and always apply. At session start, `hooks/cursor-session-start.mjs` sends the same text to Cursor. If `node` is not on `PATH`, the rule alone is enough.
@@ -38,27 +38,19 @@ The instructions live in `rules/arabic.mdc` and always apply. At session start, 
 لتغيير لغة التفكير إلى الإنجليزية، عدّل سطر التفكير في `rules/arabic.mdc`.
 To make reasoning English, edit the thinking line in `rules/arabic.mdc`.
 
-## PowerShell
+## PowerShell وحل `????`
 
-الـ CLI على PowerShell بيرسم كل حرف لوحده من الشمال لليمين. العربي العادي يظهر مقطّع ومقلوب، زي شرح `cli-config.json` لما الحروف تبقى مفصولة. على Windows الرد يتكتب في ملف UTF-8 بأداة الملفات (مش من PowerShell)، و`node` يشكّله، والنص الظاهر يُنسخ من ملف الناتج المتشكل.
-The CLI on PowerShell paints each character from left to right. Normal Arabic looks disconnected and reversed, the way a `cli-config.json` explanation looks when the letters are separated. On Windows the reply is written to a UTF-8 file with the file tool (not from PowerShell), `node` shapes it, and the visible text is copied from the shaped output file.
+الـ CLI على PowerShell بيرسم كل حرف لوحده من الشمال لليمين. على Windows الرد يتكتب في ملف UTF-8 بأداة الملفات، و`node` يشكّله بـ Smart RTL، والنص الظاهر يُنسخ من ملف الناتج فقط. أمر التشكيل يطبع `ok` على stdout ولا يطبع عربي هناك، عشان PowerShell 5.1 ما يحوّلوش لـ `????`.
+On Windows the reply is written to a UTF-8 file with the file tool, `node` shapes it with Smart RTL, and the visible text is copied only from the shaped file. The shape command prints ASCII `ok` on stdout and never prints Arabic there, so PowerShell 5.1 cannot turn the reply into `????`.
 
-متبعتش العربي في أنبوب PowerShell. Windows PowerShell 5.1 بيحوّله إلى `????`.
-Do not pipe Arabic through PowerShell. Windows PowerShell 5.1 turns it into `????`.
-
-لو شايف صفوف `????` كتير: حدّث الإضافة، افتح جلسة `agent` جديدة، واتأكد إن الأمر فيه ضبط UTF-8 وإن الرد بيتعمل من الملف مش من pipe.
-If you see rows of `????`: update the plugin, start a new `agent` session, and confirm the command sets UTF-8 and the reply comes from the file, not a pipe.
-
-ثبّت UTF-8 في ملف الـ profile عشان أي جلسة PowerShell:
-To pin UTF-8 in your PowerShell profile for every session:
+متبعتش العربي في أنبوب PowerShell أبدًا.
+Do not pipe Arabic through PowerShell.
 
 ```powershell
-if (!(Test-Path $PROFILE)) { New-Item -Path $PROFILE -ItemType File -Force }
-Add-Content $PROFILE '[Console]::InputEncoding = [Console]::OutputEncoding = $OutputEncoding = [System.Text.UTF8Encoding]::new($false)'
+cd "$env:USERPROFILE\.cursor\plugins\local\arabic"
+git pull
+agent
 ```
-
-السؤال عن `shape.mjs` مش هيظهر طول ما الوكيل مش بيحاول يشغّل الأمر. القاعدة القديمة كانت بتقوله ما يشغّلوش لو سطر الجلسة مش واصل، وده اللي بيحصل في الـ CLI. دلوقتي الأمر مكتوب في القاعدة نفسها، فالمفروض يشغّل `node` حتى لو مفيش خطاف جلسة.
-The question about `shape.mjs` never appears while the agent does not try to run it. The old rule told it not to run the command when the session line was missing, which is what happens in the CLI. The command is now in the rule, so it should start `node` even without a session hook.
 
 عشان يشتغل من غير سؤال، حط السطر ده في `permissions.allow` جوه `~/.cursor/cli-config.json`:
 To let it run without a question, add this to `permissions.allow` inside `~/.cursor/cli-config.json`:
@@ -67,27 +59,22 @@ To let it run without a question, add this to `permissions.allow` inside `~/.cur
 "Shell(node:*shape.mjs*)"
 ```
 
-حدّث الإضافة، وبعدين افتح جلسة `agent` جديدة:
+لو Cursor سأل وهو بيشغّل `shape.mjs`، اختار **Run once**.
+If Cursor asks while running `shape.mjs`, choose **Run once**.
 
-```powershell
-cd "$env:USERPROFILE\.cursor\plugins\local\arabic"
-git pull
-agent
-```
+## RtlTerminal
 
-لو Cursor سأل وهو بيشغّل `shape.mjs`، اختار **Run once**. السطر اللي بتكتبه أنت في الطرفية ممكن يفضل مقلوب. اللي بيتظبط هو رد الوكيل.
-If Cursor asks while running `shape.mjs`, choose **Run once**. The line you type can stay reversed. The agent's reply is what gets shaped.
+[RtlTerminal](https://github.com/mirbehnam/RtlTerminal) محاكي طرفية لويندوز بيرسم العربي والفارسي صح (Smart RTL + ConPTY). الإضافة مش بتستبدله: Cursor بيرسم خلايا LTR، فإحنا بنقل خوارزمية الـ spans ونكمّلها بأشكال العرض.
+[RtlTerminal](https://github.com/mirbehnam/RtlTerminal) is a Windows terminal that paints Arabic/Persian correctly (Smart RTL + ConPTY). This plugin does not replace it: Cursor paints LTR cells, so we port the directional-span idea and finish with presentation forms.
 
-لو الحروف المتشكلة اتقلبت عكس اتجاه كان سليم، ارجع للعربي الطبيعي قبل جلسة جديدة:
-If the shaped letters come out backwards when they were already correct, switch back to logical Arabic before a new session:
+لو بتشغّل `agent` جوّه RtlTerminal، عطّل التشكيل عشان ما يحصلش قلب مرتين:
+If you run `agent` inside RtlTerminal, disable shaping so letters are not reversed twice:
 
 ```powershell
 $env:ARABIC_RTL = 'native'
+# or: $env:RTLTERMINAL = '1'
 agent
 ```
-
-قائمة `/config` وكلمات مؤشر الانتظار في إضافة Claude Code مالهاش مقابل في Cursor. الإضافة هنا بتغيّر رد الوكيل وتفكيره واتجاه النص بس.
-The Claude Code plugin's `/config` menu and spinner words have no Cursor equivalent. This plugin changes the agent's reply, its thinking, and text direction only.
 
 ## الاختبارات / Tests
 
