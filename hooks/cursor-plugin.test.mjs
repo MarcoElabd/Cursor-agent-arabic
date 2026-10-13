@@ -43,6 +43,31 @@ test('sessionStart hook runs the Cursor script', () => {
   assert.equal(hooks.version, 1)
   assert.equal(hooks.hooks.sessionStart[0].command, 'node ./hooks/cursor-session-start.mjs')
   assert.equal(hooks.hooks.beforeSubmitPrompt[0].command, 'node ./hooks/cursor-session-start.mjs')
+  assert.equal(hooks.hooks.beforeShellExecution[0].command, 'node ./hooks/allow-shape.mjs')
+})
+
+test('shape command is allowed without a prompt', async () => {
+  const child = spawn(process.execPath, [join(root, 'hooks', 'allow-shape.mjs')], {
+    stdio: ['pipe', 'pipe', 'pipe'],
+  })
+  let out = ''
+  child.stdout.setEncoding('utf8')
+  child.stdout.on('data', (chunk) => { out += chunk })
+  child.stdin.end(JSON.stringify({ command: 'node "/plugin/hooks/shape.mjs"' }))
+  const code = await new Promise((resolve) => child.on('close', resolve))
+  assert.equal(code, 0)
+  assert.deepEqual(JSON.parse(out), { permission: 'allow' })
+
+  const other = spawn(process.execPath, [join(root, 'hooks', 'allow-shape.mjs')], {
+    stdio: ['pipe', 'pipe', 'pipe'],
+  })
+  let otherOut = ''
+  other.stdout.setEncoding('utf8')
+  other.stdout.on('data', (chunk) => { otherOut += chunk })
+  other.stdin.end(JSON.stringify({ command: 'git status' }))
+  const otherCode = await new Promise((resolve) => other.on('close', resolve))
+  assert.equal(otherCode, 0)
+  assert.deepEqual(JSON.parse(otherOut), {})
 })
 
 test('sessionStart hook emits the rule body as additional_context', async () => {

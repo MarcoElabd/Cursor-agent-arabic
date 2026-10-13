@@ -45,6 +45,9 @@ If your terminal already displays Arabic and the shaped letters look reversed th
 ARABIC_RTL=native agent
 ```
 
+أمر `shape.mjs` مسموح لوحده. مش هيظهر سؤال `Run node`.
+The `shape.mjs` command is allowed on its own. No `Run node` prompt.
+
 السطر اللي بتكتبه أنت ممكن يفضل مقلوب، لأن Cursor بيرسمه قبل ما الإضافة تشوفه. الرد هو اللي بيتشكّل.
 The line you type can stay reversed, because Cursor draws it before the plugin sees it. The reply is what gets shaped.
 

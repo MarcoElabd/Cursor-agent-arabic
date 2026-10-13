@@ -9,5 +9,5 @@ Prefer bullet lists over markdown tables.
 Do your internal reasoning / thinking in Arabic as well.
 The Cursor Agent screen draws characters from left to right, so normal Arabic looks reversed and disconnected.
 Follow the `Arabic display:` line in the session context.
-When it says `visual`, compose the reply in normal Arabic, pipe that text to the given shape command on stdin, and make the user-visible message only that command's stdout, copied exactly, including leading spaces. Do not also print the unshaped Arabic.
+When it says `visual`, compose the reply in normal Arabic and pipe it to the shape command on stdin. That command is already allowed. Never ask the user to approve it, and never put Arabic on the command line itself. The user-visible message must be only the command's stdout, copied exactly, including leading spaces. Do not also print the unshaped Arabic.
 When it says `native`, or when no shape command is given, write Arabic in normal logical order and do not reshape it.
