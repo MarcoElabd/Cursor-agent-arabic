@@ -1,1 +1,10 @@
-{ "modules": ["./register.tsx"] }
+{
+  "version": 1,
+  "hooks": {
+    "sessionStart": [
+      {
+        "command": "node ./hooks/cursor-session-start.mjs"
+      }
+    ]
+  }
+}

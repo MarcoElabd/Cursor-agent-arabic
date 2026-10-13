@@ -12,7 +12,7 @@ test('Cursor manifest points at the rule and the Cursor hook file', () => {
   const plugin = readJson('.cursor-plugin/plugin.json')
   assert.equal(plugin.name, 'arabic')
   assert.equal(plugin.rules, './rules/')
-  assert.equal(plugin.hooks, './hooks/hooks-cursor.json')
+  assert.equal(plugin.hooks, './hooks/hooks.json')
   assert.match(plugin.version, /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$/)
   assert.equal(plugin.license, 'MIT')
 })
@@ -24,7 +24,7 @@ test('marketplace installs the root plugin', () => {
   assert.equal(market.plugins[0].source, '.')
 })
 
-test('Arabic rule is always applied and keeps the Claude language policy', () => {
+test('Arabic rule is always applied', () => {
   const raw = readFileSync(join(root, 'rules', 'arabic.mdc'), 'utf8')
   assert.match(raw, /^---\r?\n[\s\S]*?alwaysApply:\s*true[\s\S]*?\r?\n---/)
   for (const line of [
@@ -38,12 +38,10 @@ test('Arabic rule is always applied and keeps the Claude language policy', () =>
   }
 })
 
-test('Cursor hooks do not load the Claude Code module', () => {
-  const hooks = readJson('hooks/hooks-cursor.json')
+test('sessionStart hook runs the Cursor script', () => {
+  const hooks = readJson('hooks/hooks.json')
   assert.equal(hooks.version, 1)
   assert.equal(hooks.hooks.sessionStart[0].command, 'node ./hooks/cursor-session-start.mjs')
-  assert.equal(hooks.hooks.modules, undefined)
-  assert.deepEqual(readJson('hooks/hooks.json'), { modules: ['./register.tsx'] })
 })
 
 test('sessionStart hook emits the rule body as additional_context', async () => {
