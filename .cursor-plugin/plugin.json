@@ -1,7 +1,7 @@
 {
   "name": "arabic",
   "displayName": "Cursor بالعربي",
-  "version": "1.1.1",
+  "version": "1.1.2",
   "description": "Arabic for Cursor: the agent replies and thinks in Arabic, and keeps code, commands, paths, and English technical terms in English.",
   "author": {
     "name": "Abo-Eyad"

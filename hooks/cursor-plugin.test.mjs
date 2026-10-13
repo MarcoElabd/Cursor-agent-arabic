@@ -4,6 +4,7 @@ import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { fileURLToPath } from 'node:url'
 import { dirname, join } from 'node:path'
+import { shellQuote } from './shell.mjs'
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..')
 const readJson = (path) => JSON.parse(readFileSync(join(root, path), 'utf8'))
@@ -42,18 +43,19 @@ test('sessionStart hook runs the Cursor script', () => {
   const hooks = readJson('hooks/hooks.json')
   assert.equal(hooks.version, 1)
   assert.equal(hooks.hooks.sessionStart[0].command, 'node ./hooks/cursor-session-start.mjs')
-  assert.equal(hooks.hooks.beforeSubmitPrompt[0].command, 'node ./hooks/cursor-session-start.mjs')
+  assert.equal(hooks.hooks.beforeSubmitPrompt, undefined)
   assert.equal(hooks.hooks.beforeShellExecution[0].command, 'node ./hooks/allow-shape.mjs')
 })
 
-test('shape command is allowed without a prompt', async () => {
+test('permission hook allows the standalone local shape command', async () => {
   const child = spawn(process.execPath, [join(root, 'hooks', 'allow-shape.mjs')], {
     stdio: ['pipe', 'pipe', 'pipe'],
   })
   let out = ''
   child.stdout.setEncoding('utf8')
   child.stdout.on('data', (chunk) => { out += chunk })
-  child.stdin.end(JSON.stringify({ command: 'node "/plugin/hooks/shape.mjs"' }))
+  const shapePath = join(root, 'hooks', 'shape.mjs').replaceAll('\\', '/')
+  child.stdin.end(JSON.stringify({ command: `node '${shapePath}'` }))
   const code = await new Promise((resolve) => child.on('close', resolve))
   assert.equal(code, 0)
   assert.deepEqual(JSON.parse(out), { permission: 'allow' })
@@ -67,7 +69,7 @@ test('shape command is allowed without a prompt', async () => {
   other.stdin.end(JSON.stringify({ command: 'git status' }))
   const otherCode = await new Promise((resolve) => other.on('close', resolve))
   assert.equal(otherCode, 0)
-  assert.deepEqual(JSON.parse(otherOut), {})
+  assert.deepEqual(JSON.parse(otherOut), { permission: 'ask' })
 })
 
 test('sessionStart hook emits the rule body as additional_context', async () => {
@@ -92,4 +94,65 @@ test('sessionStart hook emits the rule body as additional_context', async () => 
   assert.equal(parsed.additional_context.startsWith(body), true)
   assert.match(parsed.additional_context, /Arabic display: visual/)
   assert.match(parsed.additional_context, /hooks\/shape\.mjs/)
+})
+
+test('hook does not allow commands merely mentioning shape.mjs', async () => {
+  const shapePath = join(root, 'hooks', 'shape.mjs').replaceAll('\\', '/')
+  for (const command of [
+    'node "/other-plugin/hooks/shape.mjs"',
+    `node '${shapePath}'; node -e "process.exit(0)"`,
+    'echo shape.mjs',
+  ]) {
+    const child = spawn(process.execPath, [join(root, 'hooks', 'allow-shape.mjs')], {
+      stdio: ['pipe', 'pipe', 'pipe'],
+    })
+    let out = ''
+    child.stdout.setEncoding('utf8')
+    child.stdout.on('data', (chunk) => { out += chunk })
+    child.stdin.end(JSON.stringify({ command }))
+    assert.equal(await new Promise((resolve) => child.on('close', resolve)), 0)
+    assert.deepEqual(JSON.parse(out), { permission: 'ask' }, command)
+  }
+})
+
+test('Windows session instructions preserve Arabic through PowerShell 5.1', {
+  skip: process.platform !== 'win32',
+}, async () => {
+  const hook = spawn(process.execPath, [join(root, 'hooks', 'cursor-session-start.mjs')], {
+    env: { ...process.env, ARABIC_RTL: 'visual' },
+    stdio: ['pipe', 'pipe', 'pipe'],
+  })
+  let context = ''
+  hook.stdout.setEncoding('utf8')
+  hook.stdout.on('data', (chunk) => { context += chunk })
+  hook.stdin.end('{}')
+  assert.equal(await new Promise((resolve) => hook.on('close', resolve)), 0)
+  const body = JSON.parse(context).additional_context
+  const setup = body.match(/^PowerShell UTF-8 setup: (.+)$/m)?.[1]
+  const command = body.match(/^Shape command: (.+)$/m)?.[1]
+  assert.ok(setup, 'Windows context must configure the native-command pipeline as UTF-8')
+  assert.ok(command)
+  const child = spawn('powershell.exe', ['-NoProfile', '-Command', `${setup}; 'سلام' | ${command}`], {
+    stdio: ['ignore', 'pipe', 'pipe'],
+  })
+  let out = ''
+  child.stdout.setEncoding('utf8')
+  child.stdout.on('data', (chunk) => { out += chunk })
+  assert.equal(await new Promise((resolve) => child.on('close', resolve)), 0)
+  assert.equal(out.trim(), 'ﻡﻼﺳ')
+})
+
+test('Windows shell quoting preserves spaces, apostrophes and dollar signs in paths', {
+  skip: process.platform !== 'win32',
+}, async () => {
+  const path = "C:\\Users\\O'Brien\\$HOME\\arabic plugin\\shape.mjs"
+  const command = `& ${shellQuote(process.execPath)} -e 'process.stdout.write(process.argv[1])' ${shellQuote(path)}`
+  const child = spawn('powershell.exe', ['-NoProfile', '-Command', command], {
+    stdio: ['ignore', 'pipe', 'pipe'],
+  })
+  let out = ''
+  child.stdout.setEncoding('utf8')
+  child.stdout.on('data', (chunk) => { out += chunk })
+  assert.equal(await new Promise((resolve) => child.on('close', resolve)), 0)
+  assert.equal(out, "C:/Users/O'Brien/$HOME/arabic plugin/shape.mjs")
 })

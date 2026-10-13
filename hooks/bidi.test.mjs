@@ -36,7 +36,7 @@ test('keeps code fences and shapes only Arabic prose', () => {
   assert.equal(prose.trim().length > 0, true)
 })
 
-test('auto mode picks visual only for terminals without BiDi', () => {
+test('visual mode is the default and native mode overrides terminal detection', () => {
   assert.equal(lacksBidi({ TERM_PROGRAM: 'vscode', TERM: 'xterm-256color' }), true)
   assert.equal(lacksBidi({ TERM: 'xterm-kitty' }), true)
   assert.equal(lacksBidi({ TERM: 'xterm-256color', ALACRITTY_WINDOW_ID: '1' }), true)
@@ -47,7 +47,7 @@ test('auto mode picks visual only for terminals without BiDi', () => {
 
 test('shape command prints presentation forms', async () => {
   const child = spawn(process.execPath, [join(root, 'hooks', 'shape.mjs')], {
-    env: { ...process.env, COLUMNS: '40' },
+    env: { ...process.env, COLUMNS: '40', ARABIC_RTL: 'visual' },
     stdio: ['pipe', 'pipe', 'pipe'],
   })
   let out = ''
@@ -58,6 +58,19 @@ test('shape command prints presentation forms', async () => {
   assert.equal(code, 0)
   assert.equal(out.includes('سلام'), false)
   assert.equal(out.includes('ﺳ'), true)
+})
+
+test('shape command respects native mode', async () => {
+  const child = spawn(process.execPath, [join(root, 'hooks', 'shape.mjs')], {
+    env: { ...process.env, ARABIC_RTL: 'native' },
+    stdio: ['pipe', 'pipe', 'pipe'],
+  })
+  let out = ''
+  child.stdout.setEncoding('utf8')
+  child.stdout.on('data', (chunk) => { out += chunk })
+  child.stdin.end('سلام\n')
+  assert.equal(await new Promise((resolve) => child.on('close', resolve)), 0)
+  assert.equal(out, 'سلام\n')
 })
 
 function expectEqual(actual, expected) {

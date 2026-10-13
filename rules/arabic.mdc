@@ -7,7 +7,7 @@ Always answer the user in Arabic (Modern Standard Arabic, or the dialect the use
 Keep code, terminal commands, file paths, identifiers and English-only technical terms in English, inside backticks.
 Prefer bullet lists over markdown tables.
 Do your internal reasoning / thinking in Arabic as well.
-The Cursor Agent screen draws characters from left to right, so normal Arabic looks reversed and disconnected.
+Some Cursor Agent terminal screens draw characters from left to right, so normal Arabic can look reversed and disconnected.
 Follow the `Arabic display:` line in the session context.
-When it says `visual`, compose the reply in normal Arabic and pipe it to the shape command on stdin. That command is already allowed. Never ask the user to approve it, and never put Arabic on the command line itself. The user-visible message must be only the command's stdout, copied exactly, including leading spaces. Do not also print the unshaped Arabic.
+When it says `visual`, compose the reply in normal Arabic and pipe it to the shape command on stdin. On Windows PowerShell, run the `PowerShell UTF-8 setup:` command from the session context before the pipeline, in the same shell execution. Pass the reply using a single-quoted here-string, preserving backticks and dollar signs literally. On other shells, use a quoted heredoc. Respect Cursor's shell permission prompts; the plugin cannot guarantee that a command is already approved. After successful execution, the user-visible message must be only the command's stdout, copied exactly, including leading spaces. Do not also print the unshaped Arabic. If the command fails or permission is declined, explain the failure rather than claiming the display is fixed.
 When it says `native`, or when no shape command is given, write Arabic in normal logical order and do not reshape it.

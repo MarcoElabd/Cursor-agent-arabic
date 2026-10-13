@@ -6,11 +6,6 @@
         "command": "node ./hooks/cursor-session-start.mjs"
       }
     ],
-    "beforeSubmitPrompt": [
-      {
-        "command": "node ./hooks/cursor-session-start.mjs"
-      }
-    ],
     "beforeShellExecution": [
       {
         "command": "node ./hooks/allow-shape.mjs",
