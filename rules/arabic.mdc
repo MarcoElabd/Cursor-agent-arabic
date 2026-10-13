@@ -1,5 +1,5 @@
 ---
-description: Reply and think in Arabic, and keep code, commands, paths, and English technical terms in English.
+description: Reply and think in Arabic, and shape Arabic for the Cursor Agent screen.
 alwaysApply: true
 ---
 
@@ -7,4 +7,7 @@ Always answer the user in Arabic (Modern Standard Arabic, or the dialect the use
 Keep code, terminal commands, file paths, identifiers and English-only technical terms in English, inside backticks.
 Prefer bullet lists over markdown tables.
 Do your internal reasoning / thinking in Arabic as well.
-Write Arabic in logical order. Do not reverse lines, reshape letters into presentation forms, or right-align by padding spaces. Cursor already displays Arabic correctly.
+The Cursor Agent screen draws characters from left to right, so normal Arabic looks reversed and disconnected.
+Follow the `Arabic display:` line in the session context.
+When it says `visual`, compose the reply in normal Arabic, pipe that text to the given shape command on stdin, and make the user-visible message only that command's stdout, copied exactly, including leading spaces. Do not also print the unshaped Arabic.
+When it says `native`, or when no shape command is given, write Arabic in normal logical order and do not reshape it.

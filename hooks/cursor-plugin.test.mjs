@@ -32,7 +32,7 @@ test('Arabic rule is always applied', () => {
     'Keep code, terminal commands, file paths, identifiers and English-only technical terms in English, inside backticks.',
     'Prefer bullet lists over markdown tables.',
     'Do your internal reasoning / thinking in Arabic as well.',
-    'Write Arabic in logical order.',
+    'Arabic display:',
   ]) {
     assert.ok(raw.includes(line), line)
   }
@@ -42,6 +42,7 @@ test('sessionStart hook runs the Cursor script', () => {
   const hooks = readJson('hooks/hooks.json')
   assert.equal(hooks.version, 1)
   assert.equal(hooks.hooks.sessionStart[0].command, 'node ./hooks/cursor-session-start.mjs')
+  assert.equal(hooks.hooks.beforeSubmitPrompt[0].command, 'node ./hooks/cursor-session-start.mjs')
 })
 
 test('sessionStart hook emits the rule body as additional_context', async () => {
@@ -49,6 +50,7 @@ test('sessionStart hook emits the rule body as additional_context', async () => 
   const body = raw.replace(/^---\r?\n[\s\S]*?\r?\n---\r?\n?/, '').trim()
   const child = spawn(process.execPath, [join(root, 'hooks', 'cursor-session-start.mjs')], {
     cwd: root,
+    env: { ...process.env, ARABIC_RTL: 'visual' },
     stdio: ['pipe', 'pipe', 'pipe'],
   })
   let out = ''
@@ -61,5 +63,8 @@ test('sessionStart hook emits the rule body as additional_context', async () => 
   const code = await new Promise((resolve) => child.on('close', resolve))
   assert.equal(err, '')
   assert.equal(code, 0)
-  assert.deepEqual(JSON.parse(out), { additional_context: body })
+  const parsed = JSON.parse(out)
+  assert.equal(parsed.additional_context.startsWith(body), true)
+  assert.match(parsed.additional_context, /Arabic display: visual/)
+  assert.match(parsed.additional_context, /hooks\/shape\.mjs/)
 })
