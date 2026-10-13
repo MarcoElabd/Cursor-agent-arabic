@@ -1,0 +1,16 @@
+{
+  "name": "cursor-arabic",
+  "owner": {
+    "name": "Abo-Eyad"
+  },
+  "metadata": {
+    "description": "Arabic replies and thinking for Cursor"
+  },
+  "plugins": [
+    {
+      "name": "arabic",
+      "source": ".",
+      "description": "Arabic for Cursor: the agent replies and thinks in Arabic, and keeps code, commands, paths, and English technical terms in English."
+    }
+  ]
+}

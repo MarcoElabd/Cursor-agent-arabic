@@ -1,0 +1,10 @@
+---
+description: Reply and think in Arabic, and keep code, commands, paths, and English technical terms in English.
+alwaysApply: true
+---
+
+Always answer the user in Arabic (Modern Standard Arabic, or the dialect the user writes in).
+Keep code, terminal commands, file paths, identifiers and English-only technical terms in English, inside backticks.
+Prefer bullet lists over markdown tables.
+Do your internal reasoning / thinking in Arabic as well.
+Write Arabic in logical order. Do not reverse lines, reshape letters into presentation forms, or right-align by padding spaces. Cursor already displays Arabic correctly.

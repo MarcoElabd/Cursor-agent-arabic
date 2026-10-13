@@ -1,0 +1,17 @@
+{
+  "name": "arabic",
+  "displayName": "Cursor بالعربي",
+  "version": "0.5.0",
+  "description": "Arabic for Cursor: the agent replies and thinks in Arabic, and keeps code, commands, paths, and English technical terms in English.",
+  "author": {
+    "name": "Abo-Eyad"
+  },
+  "homepage": "https://github.com/MarcoElabd/Cursor-agent-arabic",
+  "repository": "https://github.com/MarcoElabd/Cursor-agent-arabic",
+  "license": "MIT",
+  "keywords": ["arabic", "rtl", "language", "cursor"],
+  "category": "language",
+  "tags": ["arabic", "rtl"],
+  "rules": "./rules/",
+  "hooks": "./hooks/hooks-cursor.json"
+}

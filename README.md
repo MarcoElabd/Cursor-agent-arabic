@@ -1,19 +1,52 @@
-# Claude Code بالعربي — Arabic for Claude Code
+# عربي لـ Cursor و Claude Code
 
-يجعل Claude Code يرد ويفكر بالعربية، ويعرّب قائمة `/config` ووصف الأوامر، مع إصلاح اتجاه النص (RTL) في الطرفيات التي تعرض العربية مقلوبة.
-Makes Claude Code reply and think in Arabic, translates the `/config` menu and command descriptions, and fixes right-to-left Arabic in terminals that show it reversed.
+يخليه يرد ويفكر بالعربية، ويسيب الكود والأوامر والمسارات والمصطلحات الإنجليزية كما هي.
 
-## التثبيت / Install
+Makes Cursor and Claude Code reply and think in Arabic, while keeping code, commands, paths, and English technical terms in English.
 
-In a Claude Code terminal session:
+## Cursor
 
+ثبّت المستودع من Cursor: **Customize → Plugins → Add from GitHub**، والصق:
+
+```text
+MarcoElabd/Cursor-agent-arabic
 ```
+
+Cursor يقرأ `.cursor-plugin/marketplace.json` ويثبّت إضافة `arabic`.
+
+### ماذا يعمل على Cursor
+
+| السلوك | كيف |
+| --- | --- |
+| الرد بالعربية، وباللهجة التي يكتب بها المستخدم | قاعدة دائمة في `rules/arabic.mdc` |
+| التفكير بالعربية | نفس القاعدة |
+| الكود والأوامر والمسارات والمصطلحات الإنجليزية تبقى بالإنجليزية داخل `` ` `` | نفس القاعدة |
+| القوائم النقطية بدل الجداول | نفس القاعدة |
+| نفس التعليمات في بداية الجلسة | `sessionStart` يحقن نص القاعدة في `additional_context` |
+
+القاعدة هي المسار المضمون: Cursor يضيفها لسياق الوكيل من أول رسالة، وفي جلسات Cloud Agent أيضًا. الـ hook يعيد نفس النص للجلسات التي يصلها `sessionStart`. لو `node` غير موجود في `PATH`، الـ hook لا يوقف الجلسة والقاعدة تظل شغالة.
+
+### ما لم يُنقل كما هو، ولماذا
+
+نسخة Claude Code كانت تشتغل عبر محرك `claude-code` داخل `hooks/register.tsx`. Cursor لا يشغّل هذا الملف.
+
+- **ترجمة قائمة `/config` ووصف الأوامر:** Claude Code يعطي الإضافة `command.describe` و `config.describe` و `model.complete`. Cursor ليس فيه هذه الأحداث، فترجمة القوائم الديناميكية لا يمكن تنفيذها. أسماء الأوامر والقيم (`true` / `false`) كانت تبقى إنجليزية هناك أيضًا.
+- **إصلاح اتجاه النص `visual`:** كان يعيد ترتيب الحروف قبل رسمها في طرفية Claude Code التي لا تدعم RTL. شات Cursor يعرض العربية بالترتيب المنطقي بشكل صحيح. إعادة الترتيب هنا كانت ستظهر النص مقلوبًا، لذلك القاعدة تطلب كتابة العربية بالترتيب المنطقي. كود التشكيل والترتيب في `hooks/bidi.ts` بقي لنسخة Claude Code فقط.
+- **إعدادات `/config` (`rtl` و `menus` و `thinking`):** خاصة بـ Claude Code. على Cursor السلوك هو الافتراضي الذي كان شغالًا: رد عربي، تفكير عربي. لتغيير التفكير إلى الإنجليزية، عدّل السطر الخاص به في `rules/arabic.mdc`.
+
+## Claude Code
+
+في جلسة Claude Code:
+
+```text
 /plugin install arabic --marketplace Abo-Eyad/ClaudeCode-arabic
 ```
 
-Answer `y` to add the marketplace, then pick the **user** scope.
+أجب `y` لإضافة المتجر، ثم اختر نطاق **user**.
 
-## الإعدادات / Settings (`/config` → arabic)
+هذه النسخة لم يتغير سلوكها. `hooks/hooks.json` ما زال يحمّل `hooks/register.tsx`.
+
+### الإعدادات (`/config` → arabic)
 
 | Setting | Values | Meaning |
 | --- | --- | --- |
@@ -23,18 +56,19 @@ Answer `y` to add the marketplace, then pick the **user** scope.
 | Menu language | `arabic` (default) / `english` | Language of the `/config` menu and the slash-command descriptions. |
 | Thinking language | `arabic` (default) / `english` | Language Claude reasons in, and of the spinner words. English is slightly cheaper; replies stay Arabic either way. |
 
-## إعدادات الطرفية / Terminal setup
+### إعدادات الطرفية / Terminal setup
 
 - **Windows:** use Windows Terminal (not the old `cmd` console window). Nothing to change.
 - **Arabic reversed or letters disconnected?** Your terminal doesn't do right-to-left: `/config` → arabic → RTL mode → `visual`.
 - **Font:** one with Arabic glyphs, e.g. Cascadia Mono (2404+), DejaVu Sans Mono, Kawkab Mono, Vazir Code.
 - **WezTerm (optional):** turn on its own RTL support in `~/.wezterm.lua`, then set RTL mode to `native`:
-  ```lua
-  config.bidi_enabled = true
-  config.bidi_direction = 'AutoLeftToRight'
-  ```
 
-## حدود معروفة / Known limits
+```lua
+config.bidi_enabled = true
+config.bidi_direction = 'AutoLeftToRight'
+```
+
+### حدود معروفة في Claude Code / Known limits
 
 In `visual` mode only:
 
