@@ -46,10 +46,20 @@ test('auto mode shapes only terminals without BiDi', () => {
   assert.equal(wantsVisual({ TERM_PROGRAM: 'vscode' }), true)
   assert.equal(wantsVisual({ TERM: 'xterm-256color', WT_SESSION: '1' }), false)
   assert.equal(wantsVisual({}), false)
-  assert.equal(wantsVisual({ OS: 'Windows_NT', TERM: 'xterm-256color', WT_SESSION: '1' }), true)
-  assert.equal(wantsVisual({ OS: 'Windows_NT', ARABIC_RTL: 'native', TERM_PROGRAM: 'vscode' }), false)
+  assert.equal(wantsVisual({ OS: 'Windows_NT', TERM_PROGRAM: 'vscode', WT_SESSION: '1' }), false)
+  assert.equal(wantsVisual({ OS: 'Windows_NT', ARABIC_RTL: 'visual' }), true)
   assert.equal(wantsVisual({ ARABIC_RTL: 'visual' }), true)
   assert.equal(wantsVisual({ ARABIC_RTL: 'native', TERM_PROGRAM: 'vscode' }), false)
+})
+
+test('a bidi screen must receive logical Arabic, not presentation forms', () => {
+  const logical = 'مرحبا بك في Cursor'
+  const ltrCells = reorder(shape(logical)).trim()
+  assert.equal(/[\uFE70-\uFEFF]/.test(logical), false)
+  assert.notEqual(ltrCells, logical)
+  assert.equal(ltrCells.startsWith('Cursor '), true)
+  assert.equal(shape('سلام'), 'ﺳﻼﻡ')
+  assert.equal(reorder('ﺳﻼﻡ'), 'ﻡﻼﺳ')
 })
 
 test('shape command prints presentation forms', async () => {

@@ -110,14 +110,15 @@ export const lacksBidi = (env) =>
   env.ALACRITTY_WINDOW_ID !== undefined
 
 /**
- * PowerShell and the Windows console paint cells left to right, so logical
- * Arabic looks reversed there. Shape on Windows unless the user opts out.
- * Other systems shape only when the terminal is known to lack BiDi.
+ * Cursor's chat and Windows Terminal already draw logical Arabic.
+ * Pre-shaping those letters makes them look reversed, so Windows stays
+ * native unless ARABIC_RTL=visual. Other systems shape only for terminals
+ * known to draw Arabic unjoined and left to right.
  */
 export function wantsVisual(env, platform = process.platform) {
-  if (env.ARABIC_RTL === 'native') return false
   if (env.ARABIC_RTL === 'visual') return true
-  if (platform === 'win32' || env.OS === 'Windows_NT') return true
+  if (env.ARABIC_RTL === 'native') return false
+  if (platform === 'win32' || env.OS === 'Windows_NT') return false
   return lacksBidi(env)
 }
 

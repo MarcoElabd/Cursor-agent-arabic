@@ -99,10 +99,9 @@ test('sessionStart hook emits the rule body as additional_context', async () => 
   assert.equal(parsed.continue, undefined)
 })
 
-test('Windows PowerShell shapes replies so letters are not left reversed', async () => {
-  const env = { ...process.env, OS: 'Windows_NT', TERM: 'xterm-256color', WT_SESSION: 'wt' }
+test('Windows PowerShell sessions keep logical Arabic', async () => {
+  const env = { ...process.env, OS: 'Windows_NT', TERM_PROGRAM: 'vscode', TERM: 'xterm-256color', WT_SESSION: 'wt' }
   delete env.ARABIC_RTL
-  delete env.TERM_PROGRAM
   delete env.ALACRITTY_WINDOW_ID
   const child = spawn(process.execPath, [join(root, 'hooks', 'cursor-session-start.mjs')], {
     env,
@@ -114,9 +113,9 @@ test('Windows PowerShell shapes replies so letters are not left reversed', async
   child.stdin.end(JSON.stringify({ session_id: 'ps', composer_mode: 'agent' }))
   assert.equal(await new Promise((resolve) => child.on('close', resolve)), 0)
   const parsed = JSON.parse(out)
-  assert.match(parsed.additional_context, /Arabic display: visual/)
-  assert.match(parsed.additional_context, /^Shape command: /m)
-  assert.equal(parsed.additional_context.includes('|'), false)
+  assert.match(parsed.additional_context, /Arabic display: native/)
+  assert.equal(/^Shape command: /m.test(parsed.additional_context), false)
+  assert.equal(/^Reply file: /m.test(parsed.additional_context), false)
 })
 
 test('beforeSubmitPrompt keeps the prompt and repeats the display mode', async () => {

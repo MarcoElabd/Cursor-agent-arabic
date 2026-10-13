@@ -1,8 +1,8 @@
 {
   "name": "arabic",
   "displayName": "Cursor بالعربي",
-  "version": "1.2.1",
-  "description": "Arabic for Cursor Agent: replies and thinking in Arabic. Windows PowerShell shapes replies from a UTF-8 file so letters are not reversed.",
+  "version": "2.0.0",
+  "description": "Arabic for Cursor Agent: replies and thinking in Arabic, in logical order, so Cursor and Windows Terminal do not show reversed letters.",
   "author": {
     "name": "Abo-Eyad"
   },

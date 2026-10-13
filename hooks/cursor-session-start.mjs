@@ -31,8 +31,8 @@ const display = wantsVisual(process.env)
   ? visualDisplay(shape, input)
   : [
       'Arabic display: native',
-      'Write Arabic in normal logical order. Do not reshape it and do not run the shape command.',
-      'Use this mode only when the screen already draws Arabic correctly.',
+      'The user-visible reply is normal Arabic. Do not run shape.mjs.',
+      'PowerShell is the shell for commands. It is not a reason to reshape the reply.',
     ].join('\n')
 
 const additional_context = `${body}\n\n${display}`

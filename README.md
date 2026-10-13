@@ -30,7 +30,7 @@ To try it locally, copy the repository to `~/.cursor/plugins/local/arabic`, run 
 | التفكير | بالعربية. Reasoning stays in Arabic. |
 | الكود | الأوامر والمسارات والمعرّفات والمصطلحات الإنجليزية تبقى بالإنجليزية داخل `` ` ``. Commands, paths, identifiers, and English-only terms stay in English, inside backticks. |
 | التنسيق | قوائم نقطية بدل الجداول. Bullet lists instead of markdown tables. |
-| اتجاه النص | على Windows الرد بيتشكّل عشان PowerShell ما يقلّبهوش. التشكيل من ملف UTF-8 عن طريق `hooks/shape.mjs`، من غير ما العربي يعدي في أنبوب PowerShell. On Windows, replies are shaped so PowerShell does not show them reversed. Shaping reads a UTF-8 file through `hooks/shape.mjs`. |
+| اتجاه النص | الرد عربي طبيعي. شات Cursor وWindows Terminal بيرسموه صح. تشكيل الحروف قبل العرض بيقلبها. The reply is logical Arabic. The Cursor chat and Windows Terminal draw it. Shaping the letters first makes them look reversed. |
 
 التعليمات في `rules/arabic.mdc` وتُطبَّق دائمًا. عند بداية الجلسة يعيد `hooks/cursor-session-start.mjs` نفس النص إلى Cursor. لو `node` غير موجود في `PATH` تظل القاعدة وحدها كافية.
 The instructions live in `rules/arabic.mdc` and always apply. At session start, `hooks/cursor-session-start.mjs` sends the same text to Cursor. If `node` is not on `PATH`, the rule alone is enough.
@@ -40,48 +40,37 @@ To make reasoning English, edit the thinking line in `rules/arabic.mdc`.
 
 ## PowerShell
 
-نافذة PowerShell بترسم الحروف من الشمال لليمين، فالعربي الطبيعي يظهر مقلوب. على Windows الإضافة بتشكّل رد الوكيل قبل ما يتعرض. متبعتش العربي في أنبوب PowerShell: Windows PowerShell 5.1 بيحوّله إلى `????` قبل ما يوصل لـ Node.
-The PowerShell window draws left to right, so normal Arabic looks reversed. On Windows the plugin shapes the agent's reply before it is shown. Do not pipe Arabic through PowerShell: Windows PowerShell 5.1 turns it into `????` before Node sees it.
+شات Cursor هو مكان الرد، وبيرسم العربي لوحده. الإضافة ما بتحوّلش الحروف، وما بتشغّلش أمر في PowerShell عشان تعرض الرد. تحويل الحروف لأشكال العرض كان بيخلّيها مقلوبة في الشات وفي Windows Terminal.
+The Cursor chat is where the reply appears, and it draws Arabic itself. The plugin does not reshape letters and does not run a PowerShell command to display the reply. Presentation forms were showing up reversed in the chat and in Windows Terminal.
 
-السطر اللي بتكتبه أنت في نافذة PowerShell ممكن يفضل مقلوب. الإضافة مش بتشوفه قبل ما الطرفية ترسمه. اللي بيتشكّل هو رد الوكيل.
-The line you type in the PowerShell window can stay reversed. The plugin does not see it before the terminal draws it. The agent's reply is what gets shaped.
+السطر اللي بتكتبه جوه نافذة PowerShell المدمجة في Cursor ممكن يفضل مقلوب. النافذة دي بترسم من الشمال لليمين، والإضافة مش بتقدر تغيّر رسمها. اقرأ الرد من شات الوكيل. لأوامر الطرفية استخدم Windows Terminal، مش نافذة `cmd` القديمة.
+A line you type in Cursor's integrated PowerShell window can stay reversed. That window draws left to right, and the plugin cannot change how it paints. Read the reply in the agent chat. For a shell, use Windows Terminal, not the old `cmd` window.
 
-حدّث الإضافة المثبتة، وبعدين افتح محادثة Agent جديدة:
+متبعتش العربي في أنبوب PowerShell. Windows PowerShell 5.1 بيحوّله إلى `????`.
+Do not pipe Arabic through PowerShell. Windows PowerShell 5.1 turns it into `????`.
+
+حدّث الإضافة، وبعدين **Developer: Reload Window**، وافتح محادثة Agent جديدة:
 
 ```powershell
 cd "$env:USERPROFILE\.cursor\plugins\local\arabic"
 git pull
 ```
 
-الوكيل بيكتب الرد في ملف UTF-8 بأداة الملفات، وبعدين يشغّل `node` على الملف. الأمر بيفتح UTF-8 في نفس سطر PowerShell. اختار **Run once** لو Cursor سأل.
-The agent writes the reply to a UTF-8 file with the file tool, then runs `node` on the file. The command turns on UTF-8 in the same PowerShell line. Choose **Run once** if Cursor asks.
+لو الوكيل شغّال جوه طرفية ما بترسمش العربي خالص، وحروف الرد نفسه مقطعة، اجبر التشكيل قبل جلسة جديدة. ده مش الوضع العادي:
+If the agent is running inside a terminal that cannot draw Arabic at all, and the reply letters are disconnected, force shaping before a new session. This is not the normal mode:
 
-لو التشكيل خلّى حروف كانت سليمة تتقلب بالعكس، ارجع للوضع الطبيعي قبل جلسة جديدة:
-If shaping flips letters that were already correct, switch back to native before a new session:
+```powershell
+$env:ARABIC_RTL = 'visual'
+agent
+```
+
+في الوضع ده الرد يتكتب في ملف UTF-8، و`node` يقرأه. اختار **Run once** لو Cursor سأل. لو الحروف اتقلبت، ارجع للوضع الطبيعي:
+In that mode the reply is written to a UTF-8 file and `node` reads it. Choose **Run once** if Cursor asks. If the letters come out reversed, go back to native:
 
 ```powershell
 $env:ARABIC_RTL = 'native'
 agent
 ```
-
-في Bash أو Zsh / In Bash or Zsh:
-
-```bash
-ARABIC_RTL=native agent
-```
-
-تجربة المحوّل من مجلد المستودع، من غير ما العربي يعدي على PowerShell:
-Try the renderer from the repository folder without sending Arabic through PowerShell:
-
-```powershell
-$env:ARABIC_RTL = 'visual'
-[Console]::OutputEncoding = $OutputEncoding = [System.Text.UTF8Encoding]::new($false)
-[System.IO.File]::WriteAllText("$pwd\reply.txt", "مرحبا بك في Cursor`n", [System.Text.UTF8Encoding]::new($false))
-node ./hooks/shape.mjs .\reply.txt
-```
-
-خطاف السماح يوافق على المحوّل المحلي وحده، أو مع ملف الرد بس. الأنبوب والأوامر المركبة تحتاج مراجعة، وقد تطلب صلاحيات Cursor الموافقة حتى مع وجود الخطاف.
-The permission hook allows only this plugin's renderer, alone or with the reply file. Pipelines and compound commands need review, and Cursor's own permissions may still ask. See [Cursor CLI permissions](https://cursor.com/docs/cli/reference/permissions).
 
 قائمة `/config` وكلمات مؤشر الانتظار في إضافة Claude Code مالهاش مقابل في Cursor. الإضافة هنا بتغيّر رد الوكيل وتفكيره واتجاه النص بس.
 The Claude Code plugin's `/config` menu and spinner words have no Cursor equivalent. This plugin changes the agent's reply, its thinking, and text direction only.
@@ -92,8 +81,8 @@ The Claude Code plugin's `/config` menu and spinner words have no Cursor equival
 node --test hooks/*.test.mjs
 ```
 
-يشمل الاختبار في Windows إرسال العربية إلى المحوّل عبر Windows PowerShell 5.1. يظل اختبار العرض النهائي في جلسة Cursor جديدة مطلوبًا.
-On Windows, the tests include piping Arabic through Windows PowerShell 5.1 into the renderer. The final display still needs a check in a fresh Cursor session.
+الاختبار يتأكد إن جلسة Windows تطلب عربي طبيعي، وإن أشكال العرض مش هي النص اللي يتبعت لشاشة بتعرف ترسم العربي.
+The test checks that a Windows session asks for logical Arabic, and that presentation forms are not what a bidi screen should receive.
 
 ## الرخصة / License
 
