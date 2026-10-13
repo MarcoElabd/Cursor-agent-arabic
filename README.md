@@ -30,7 +30,7 @@ To try it locally, copy the repository to `~/.cursor/plugins/local/arabic`, run 
 | التفكير | بالعربية. Reasoning stays in Arabic. |
 | الكود | الأوامر والمسارات والمعرّفات والمصطلحات الإنجليزية تبقى بالإنجليزية داخل `` ` ``. Commands, paths, identifiers, and English-only terms stay in English, inside backticks. |
 | التنسيق | قوائم نقطية بدل الجداول. Bullet lists instead of markdown tables. |
-| اتجاه النص | PowerShell داخل Windows Terminal، وشات Cursor، بيعرضوا العربي صح من غير تحويل. الطرفيات اللي مش بترسم العربي (طرفية Cursor أو VS Code) بتعدّي الرد على `hooks/shape.mjs` من ملف UTF-8. PowerShell in Windows Terminal, and the Cursor chat, show logical Arabic. Terminals that cannot draw it pass the reply through `hooks/shape.mjs` from a UTF-8 file. |
+| اتجاه النص | على Windows الرد بيتشكّل عشان PowerShell ما يقلّبهوش. التشكيل من ملف UTF-8 عن طريق `hooks/shape.mjs`، من غير ما العربي يعدي في أنبوب PowerShell. On Windows, replies are shaped so PowerShell does not show them reversed. Shaping reads a UTF-8 file through `hooks/shape.mjs`. |
 
 التعليمات في `rules/arabic.mdc` وتُطبَّق دائمًا. عند بداية الجلسة يعيد `hooks/cursor-session-start.mjs` نفس النص إلى Cursor. لو `node` غير موجود في `PATH` تظل القاعدة وحدها كافية.
 The instructions live in `rules/arabic.mdc` and always apply. At session start, `hooks/cursor-session-start.mjs` sends the same text to Cursor. If `node` is not on `PATH`, the rule alone is enough.
@@ -40,25 +40,24 @@ To make reasoning English, edit the thinking line in `rules/arabic.mdc`.
 
 ## PowerShell
 
-على PowerShell في Windows Terminal مش محتاج تظبط حاجة. الإضافة بتسيب العربي بالترتيب الطبيعي، لأن Windows Terminal بيرسمه صح. متبعتش العربي في أنبوب PowerShell: Windows PowerShell 5.1 بيحوّله إلى `????` قبل ما يوصل لـ Node.
-On PowerShell in Windows Terminal you do not set anything. The plugin leaves Arabic in logical order, because Windows Terminal draws it. Do not pipe Arabic through PowerShell: Windows PowerShell 5.1 turns it into `????` before Node sees it.
+نافذة PowerShell بترسم الحروف من الشمال لليمين، فالعربي الطبيعي يظهر مقلوب. على Windows الإضافة بتشكّل رد الوكيل قبل ما يتعرض. متبعتش العربي في أنبوب PowerShell: Windows PowerShell 5.1 بيحوّله إلى `????` قبل ما يوصل لـ Node.
+The PowerShell window draws left to right, so normal Arabic looks reversed. On Windows the plugin shapes the agent's reply before it is shown. Do not pipe Arabic through PowerShell: Windows PowerShell 5.1 turns it into `????` before Node sees it.
 
-استخدم Windows Terminal، مش نافذة `cmd` القديمة.
-Use Windows Terminal, not the old `cmd` console window.
+السطر اللي بتكتبه أنت في نافذة PowerShell ممكن يفضل مقلوب. الإضافة مش بتشوفه قبل ما الطرفية ترسمه. اللي بيتشكّل هو رد الوكيل.
+The line you type in the PowerShell window can stay reversed. The plugin does not see it before the terminal draws it. The agent's reply is what gets shaped.
 
-لو الحروف ظاهرة مقطعة أو مقلوبة (طرفية Cursor أو VS Code)، اجبر التشكيل قبل جلسة جديدة:
-If letters look disconnected or reversed (the Cursor or VS Code terminal), force shaping before a new session:
+حدّث الإضافة المثبتة، وبعدين افتح محادثة Agent جديدة:
 
 ```powershell
-$env:ARABIC_RTL = 'visual'
-agent
+cd "$env:USERPROFILE\.cursor\plugins\local\arabic"
+git pull
 ```
 
-في الوضع ده الوكيل بيكتب الرد في ملف UTF-8 بأداة الملفات، وبعدين يشغّل `node` على الملف. الأمر بيفتح UTF-8 في نفس سطر PowerShell عشان الخرج يرجع عربي مش علامات استفهام. اختار **Run once** لو Cursor سأل.
-In that mode the agent writes the reply to a UTF-8 file with the file tool, then runs `node` on the file. The command turns on UTF-8 in the same PowerShell line so the output comes back as Arabic. Choose **Run once** if Cursor asks.
+الوكيل بيكتب الرد في ملف UTF-8 بأداة الملفات، وبعدين يشغّل `node` على الملف. الأمر بيفتح UTF-8 في نفس سطر PowerShell. اختار **Run once** لو Cursor سأل.
+The agent writes the reply to a UTF-8 file with the file tool, then runs `node` on the file. The command turns on UTF-8 in the same PowerShell line. Choose **Run once** if Cursor asks.
 
-لو التشكيل خلّى حروف سليمة تتقلب بالعكس، ارجع للوضع الطبيعي:
-If shaping flips letters that were already correct, switch back to native:
+لو التشكيل خلّى حروف كانت سليمة تتقلب بالعكس، ارجع للوضع الطبيعي قبل جلسة جديدة:
+If shaping flips letters that were already correct, switch back to native before a new session:
 
 ```powershell
 $env:ARABIC_RTL = 'native'
@@ -83,9 +82,6 @@ node ./hooks/shape.mjs .\reply.txt
 
 خطاف السماح يوافق على المحوّل المحلي وحده، أو مع ملف الرد بس. الأنبوب والأوامر المركبة تحتاج مراجعة، وقد تطلب صلاحيات Cursor الموافقة حتى مع وجود الخطاف.
 The permission hook allows only this plugin's renderer, alone or with the reply file. Pipelines and compound commands need review, and Cursor's own permissions may still ask. See [Cursor CLI permissions](https://cursor.com/docs/cli/reference/permissions).
-
-السطر اللي بتكتبه أنت ممكن يفضل مقلوب، لأن Cursor بيرسمه قبل ما الإضافة تشوفه.
-The line you type can stay reversed, because Cursor draws it before the plugin sees it.
 
 قائمة `/config` وكلمات مؤشر الانتظار في إضافة Claude Code مالهاش مقابل في Cursor. الإضافة هنا بتغيّر رد الوكيل وتفكيره واتجاه النص بس.
 The Claude Code plugin's `/config` menu and spinner words have no Cursor equivalent. This plugin changes the agent's reply, its thinking, and text direction only.

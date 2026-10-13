@@ -32,7 +32,7 @@ const display = wantsVisual(process.env)
   : [
       'Arabic display: native',
       'Write Arabic in normal logical order. Do not reshape it and do not run the shape command.',
-      'This is the mode for PowerShell in Windows Terminal and for the Cursor chat.',
+      'Use this mode only when the screen already draws Arabic correctly.',
     ].join('\n')
 
 const additional_context = `${body}\n\n${display}`

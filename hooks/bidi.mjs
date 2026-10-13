@@ -110,13 +110,14 @@ export const lacksBidi = (env) =>
   env.ALACRITTY_WINDOW_ID !== undefined
 
 /**
- * Same auto mode as the Claude Code plugin.
- * Windows Terminal and the Cursor chat draw Arabic themselves, so PowerShell
- * stays on logical Arabic unless the terminal is known to lack BiDi.
+ * PowerShell and the Windows console paint cells left to right, so logical
+ * Arabic looks reversed there. Shape on Windows unless the user opts out.
+ * Other systems shape only when the terminal is known to lack BiDi.
  */
-export function wantsVisual(env) {
+export function wantsVisual(env, platform = process.platform) {
   if (env.ARABIC_RTL === 'native') return false
   if (env.ARABIC_RTL === 'visual') return true
+  if (platform === 'win32' || env.OS === 'Windows_NT') return true
   return lacksBidi(env)
 }
 
