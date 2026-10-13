@@ -99,7 +99,7 @@ test('sessionStart hook emits the rule body as additional_context', async () => 
   assert.equal(parsed.continue, undefined)
 })
 
-test('Windows PowerShell sessions keep logical Arabic', async () => {
+test('Windows CLI sessions shape Arabic so cells are not disconnected', async () => {
   const env = { ...process.env, OS: 'Windows_NT', TERM_PROGRAM: 'vscode', TERM: 'xterm-256color', WT_SESSION: 'wt' }
   delete env.ARABIC_RTL
   delete env.ALACRITTY_WINDOW_ID
@@ -113,9 +113,10 @@ test('Windows PowerShell sessions keep logical Arabic', async () => {
   child.stdin.end(JSON.stringify({ session_id: 'ps', composer_mode: 'agent' }))
   assert.equal(await new Promise((resolve) => child.on('close', resolve)), 0)
   const parsed = JSON.parse(out)
-  assert.match(parsed.additional_context, /Arabic display: native/)
-  assert.equal(/^Shape command: /m.test(parsed.additional_context), false)
-  assert.equal(/^Reply file: /m.test(parsed.additional_context), false)
+  assert.match(parsed.additional_context, /Arabic display: visual/)
+  assert.match(parsed.additional_context, /^Shape command: /m)
+  assert.match(parsed.additional_context, /^Reply file: /m)
+  assert.equal(parsed.additional_context.includes('|'), false)
 })
 
 test('beforeSubmitPrompt keeps the prompt and repeats the display mode', async () => {

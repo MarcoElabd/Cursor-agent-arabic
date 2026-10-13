@@ -32,7 +32,6 @@ const display = wantsVisual(process.env)
   : [
       'Arabic display: native',
       'The user-visible reply is normal Arabic. Do not run shape.mjs.',
-      'PowerShell is the shell for commands. It is not a reason to reshape the reply.',
     ].join('\n')
 
 const additional_context = `${body}\n\n${display}`
@@ -47,8 +46,9 @@ function visualDisplay(shapePath, hookInput) {
   return [
     'Arabic display: visual',
     `Reply file: ${file}`,
-    'Write the full reply to Reply file with the file tool, as UTF-8, before the shape command. Do not create that file in PowerShell, and do not pipe Arabic into Node.',
+    'The Cursor CLI paints cells left to right. Logical Arabic looks disconnected and reversed there.',
+    'Write the full reply to Reply file with the file tool, as UTF-8. Do not create that file in PowerShell, and do not pipe Arabic into Node.',
     `Shape command: ${shapeCommand(shapePath, file)}`,
-    'Cursor may still request shell approval. After success, the user-visible message is only the command stdout, copied exactly, including leading spaces. Do not also print the unshaped Arabic.',
+    'After success, the user-visible message is only that stdout, copied exactly, including leading spaces. It must not contain letters from ء to ي.',
   ].join('\n')
 }

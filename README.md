@@ -30,7 +30,7 @@ To try it locally, copy the repository to `~/.cursor/plugins/local/arabic`, run 
 | التفكير | بالعربية. Reasoning stays in Arabic. |
 | الكود | الأوامر والمسارات والمعرّفات والمصطلحات الإنجليزية تبقى بالإنجليزية داخل `` ` ``. Commands, paths, identifiers, and English-only terms stay in English, inside backticks. |
 | التنسيق | قوائم نقطية بدل الجداول. Bullet lists instead of markdown tables. |
-| اتجاه النص | الرد عربي طبيعي. شات Cursor وWindows Terminal بيرسموه صح. تشكيل الحروف قبل العرض بيقلبها. The reply is logical Arabic. The Cursor chat and Windows Terminal draw it. Shaping the letters first makes them look reversed. |
+| اتجاه النص | الـ CLI بيرسم كل حرف في خانة من الشمال لليمين، فالعربي العادي يظهر مقطّع ومقلوب. الرد يتشكّل قبل العرض. The CLI paints each character in a cell from left to right, so normal Arabic looks disconnected and reversed. The reply is shaped before display. |
 
 التعليمات في `rules/arabic.mdc` وتُطبَّق دائمًا. عند بداية الجلسة يعيد `hooks/cursor-session-start.mjs` نفس النص إلى Cursor. لو `node` غير موجود في `PATH` تظل القاعدة وحدها كافية.
 The instructions live in `rules/arabic.mdc` and always apply. At session start, `hooks/cursor-session-start.mjs` sends the same text to Cursor. If `node` is not on `PATH`, the rule alone is enough.
@@ -40,32 +40,25 @@ To make reasoning English, edit the thinking line in `rules/arabic.mdc`.
 
 ## PowerShell
 
-شات Cursor هو مكان الرد، وبيرسم العربي لوحده. الإضافة ما بتحوّلش الحروف، وما بتشغّلش أمر في PowerShell عشان تعرض الرد. تحويل الحروف لأشكال العرض كان بيخلّيها مقلوبة في الشات وفي Windows Terminal.
-The Cursor chat is where the reply appears, and it draws Arabic itself. The plugin does not reshape letters and does not run a PowerShell command to display the reply. Presentation forms were showing up reversed in the chat and in Windows Terminal.
-
-السطر اللي بتكتبه جوه نافذة PowerShell المدمجة في Cursor ممكن يفضل مقلوب. النافذة دي بترسم من الشمال لليمين، والإضافة مش بتقدر تغيّر رسمها. اقرأ الرد من شات الوكيل. لأوامر الطرفية استخدم Windows Terminal، مش نافذة `cmd` القديمة.
-A line you type in Cursor's integrated PowerShell window can stay reversed. That window draws left to right, and the plugin cannot change how it paints. Read the reply in the agent chat. For a shell, use Windows Terminal, not the old `cmd` window.
+الـ CLI على PowerShell بيرسم كل حرف لوحده من الشمال لليمين. العربي العادي يظهر مقطّع ومقلوب، زي شرح `cli-config.json` لما الحروف تبقى مفصولة. على Windows الرد يتكتب في ملف UTF-8، و`node` يشكّله، والنص الظاهر هو ناتج الأمر بس.
+The CLI on PowerShell paints each character from left to right. Normal Arabic looks disconnected and reversed, the way a `cli-config.json` explanation looks when the letters are separated. On Windows the reply is written to a UTF-8 file, `node` shapes it, and the visible text is only that command's output.
 
 متبعتش العربي في أنبوب PowerShell. Windows PowerShell 5.1 بيحوّله إلى `????`.
 Do not pipe Arabic through PowerShell. Windows PowerShell 5.1 turns it into `????`.
 
-حدّث الإضافة، وبعدين **Developer: Reload Window**، وافتح محادثة Agent جديدة:
+حدّث الإضافة، وبعدين افتح جلسة `agent` جديدة:
 
 ```powershell
 cd "$env:USERPROFILE\.cursor\plugins\local\arabic"
 git pull
-```
-
-لو الوكيل شغّال جوه طرفية ما بترسمش العربي خالص، وحروف الرد نفسه مقطعة، اجبر التشكيل قبل جلسة جديدة. ده مش الوضع العادي:
-If the agent is running inside a terminal that cannot draw Arabic at all, and the reply letters are disconnected, force shaping before a new session. This is not the normal mode:
-
-```powershell
-$env:ARABIC_RTL = 'visual'
 agent
 ```
 
-في الوضع ده الرد يتكتب في ملف UTF-8، و`node` يقرأه. اختار **Run once** لو Cursor سأل. لو الحروف اتقلبت، ارجع للوضع الطبيعي:
-In that mode the reply is written to a UTF-8 file and `node` reads it. Choose **Run once** if Cursor asks. If the letters come out reversed, go back to native:
+لو Cursor سأل وهو بيشغّل `shape.mjs`، اختار **Run once**. السطر اللي بتكتبه أنت في الطرفية ممكن يفضل مقلوب. اللي بيتظبط هو رد الوكيل.
+If Cursor asks while running `shape.mjs`, choose **Run once**. The line you type can stay reversed. The agent's reply is what gets shaped.
+
+لو الحروف المتشكلة اتقلبت عكس اتجاه كان سليم، ارجع للعربي الطبيعي قبل جلسة جديدة:
+If the shaped letters come out backwards when they were already correct, switch back to logical Arabic before a new session:
 
 ```powershell
 $env:ARABIC_RTL = 'native'
@@ -81,8 +74,8 @@ The Claude Code plugin's `/config` menu and spinner words have no Cursor equival
 node --test hooks/*.test.mjs
 ```
 
-الاختبار يتأكد إن جلسة Windows تطلب عربي طبيعي، وإن أشكال العرض مش هي النص اللي يتبعت لشاشة بتعرف ترسم العربي.
-The test checks that a Windows session asks for logical Arabic, and that presentation forms are not what a bidi screen should receive.
+الاختبار يتأكد إن جلسة Windows تطلب التشكيل، وإن الرد المتشكل ما يبقاش فيه حروف عربية عادية مقطعة.
+The test checks that a Windows session asks for shaping, and that a shaped reply no longer contains ordinary disconnected Arabic letters.
 
 ## الرخصة / License
 

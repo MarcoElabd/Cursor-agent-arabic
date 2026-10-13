@@ -110,15 +110,14 @@ export const lacksBidi = (env) =>
   env.ALACRITTY_WINDOW_ID !== undefined
 
 /**
- * Cursor's chat and Windows Terminal already draw logical Arabic.
- * Pre-shaping those letters makes them look reversed, so Windows stays
- * native unless ARABIC_RTL=visual. Other systems shape only for terminals
- * known to draw Arabic unjoined and left to right.
+ * The Cursor CLI paints one character per cell from left to right, so logical
+ * Arabic looks disconnected and reversed there. Shape on Windows unless the
+ * user opts out. Other systems shape only for terminals known to lack BiDi.
  */
 export function wantsVisual(env, platform = process.platform) {
-  if (env.ARABIC_RTL === 'visual') return true
   if (env.ARABIC_RTL === 'native') return false
-  if (platform === 'win32' || env.OS === 'Windows_NT') return false
+  if (env.ARABIC_RTL === 'visual') return true
+  if (platform === 'win32' || env.OS === 'Windows_NT') return true
   return lacksBidi(env)
 }
 

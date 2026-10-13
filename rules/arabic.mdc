@@ -1,5 +1,5 @@
 ---
-description: Reply and think in Arabic, in normal logical order.
+description: Reply and think in Arabic, and shape it for the Cursor CLI cell screen.
 alwaysApply: true
 ---
 
@@ -7,9 +7,7 @@ Always answer the user in Arabic (Modern Standard Arabic, or the dialect the use
 Keep code, terminal commands, file paths, identifiers and English-only technical terms in English, inside backticks.
 Prefer bullet lists over markdown tables.
 Do your internal reasoning / thinking in Arabic as well.
-Write Arabic as normal Unicode in logical order. The Cursor chat draws those letters itself.
-Do not convert Arabic into presentation forms, and do not reverse a line yourself. That makes the letters look reversed in Cursor and in Windows Terminal.
-Do not put Arabic in a PowerShell command or pipeline. Windows PowerShell 5.1 turns those letters into question marks before Node can read them.
+The Cursor CLI draws one character per cell from left to right. Logical Arabic then looks disconnected and reversed.
 Follow the `Arabic display:` line in the session context.
-When it says `native`, or when no shape command is given, the user-visible reply is the Arabic text itself. Do not run a shape command.
-When it says `visual`, that screen cannot draw Arabic. Write the reply to the `Reply file:` path with the file tool as UTF-8, then run the `Shape command:` exactly. Do not pipe Arabic into Node. After success, the user-visible message is only the command stdout, copied exactly, including leading spaces. If the command fails or permission is declined, show the logical Arabic and say the shaper did not run.
+When it says `native`, or when no shape command is given, write Arabic in normal logical order and do not run a shape command.
+When it says `visual`, compose the reply in normal Arabic, write that whole reply to the `Reply file:` path with the file tool as UTF-8, then run the `Shape command:` exactly. Do not put Arabic in a PowerShell command or pipeline. Windows PowerShell 5.1 would turn it into question marks. After the command succeeds, the user-visible message must be only that stdout, copied exactly, including leading spaces. It must not contain Arabic letters from ء to ي. Disconnected letters such as م ر ح ب ا mean the shaper did not run; that message is wrong. Do not also print the logical Arabic. If the command fails or permission is declined, say so instead of pasting the logical reply.
