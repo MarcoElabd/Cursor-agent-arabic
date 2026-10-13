@@ -46,6 +46,16 @@ The CLI on PowerShell paints each character from left to right. Normal Arabic lo
 متبعتش العربي في أنبوب PowerShell. Windows PowerShell 5.1 بيحوّله إلى `????`.
 Do not pipe Arabic through PowerShell. Windows PowerShell 5.1 turns it into `????`.
 
+السؤال عن `shape.mjs` مش هيظهر طول ما الوكيل مش بيحاول يشغّل الأمر. القاعدة القديمة كانت بتقوله ما يشغّلوش لو سطر الجلسة مش واصل، وده اللي بيحصل في الـ CLI. دلوقتي الأمر مكتوب في القاعدة نفسها، فالمفروض يشغّل `node` حتى لو مفيش خطاف جلسة.
+The question about `shape.mjs` never appears while the agent does not try to run it. The old rule told it not to run the command when the session line was missing, which is what happens in the CLI. The command is now in the rule, so it should start `node` even without a session hook.
+
+عشان يشتغل من غير سؤال، حط السطر ده في `permissions.allow` جوه `~/.cursor/cli-config.json`:
+To let it run without a question, add this to `permissions.allow` inside `~/.cursor/cli-config.json`:
+
+```json
+"Shell(node:*shape.mjs*)"
+```
+
 حدّث الإضافة، وبعدين افتح جلسة `agent` جديدة:
 
 ```powershell

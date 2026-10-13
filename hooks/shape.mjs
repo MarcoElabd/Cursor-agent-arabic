@@ -1,7 +1,8 @@
-import { readFileSync } from 'node:fs'
+import { readFileSync, writeFileSync } from 'node:fs'
 import { renderReply, wantsVisual } from './bidi.mjs'
 
 const file = process.argv[2]
+const outFile = process.argv[3]
 let text
 if (file) {
   try {
@@ -19,4 +20,6 @@ if (file) {
 const columns = Number(process.env.COLUMNS)
 const width = Number.isFinite(columns) && columns >= 40 ? columns - 4 : 80
 const out = wantsVisual(process.env) ? renderReply(text, width) : text
-process.stdout.write(out.endsWith('\n') || out.length === 0 ? out : `${out}\n`)
+const rendered = out.endsWith('\n') || out.length === 0 ? out : `${out}\n`
+if (outFile) writeFileSync(outFile, rendered, 'utf8')
+process.stdout.write(rendered)

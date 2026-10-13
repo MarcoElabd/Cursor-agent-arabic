@@ -4,7 +4,7 @@ import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { fileURLToPath } from 'node:url'
 import { dirname, join } from 'node:path'
-import { isAllowedShapeCommand, shapeCommand, shellQuote } from './shell.mjs'
+import { FALLBACK_SHAPE_COMMAND, isAllowedShapeCommand, shapeCommand, shellQuote } from './shell.mjs'
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..')
 const readJson = (path) => JSON.parse(readFileSync(join(root, path), 'utf8'))
@@ -34,6 +34,8 @@ test('Arabic rule is always applied', () => {
     'Prefer bullet lists over markdown tables.',
     'Do your internal reasoning / thinking in Arabic as well.',
     'Arabic display:',
+    FALLBACK_SHAPE_COMMAND,
+    'or when no Arabic display line is present',
   ]) {
     assert.ok(raw.includes(line), line)
   }
@@ -116,7 +118,9 @@ test('Windows CLI sessions shape Arabic so cells are not disconnected', async ()
   assert.match(parsed.additional_context, /Arabic display: visual/)
   assert.match(parsed.additional_context, /^Shape command: /m)
   assert.match(parsed.additional_context, /^Reply file: /m)
+  assert.match(parsed.additional_context, /^Shaped file: /m)
   assert.equal(parsed.additional_context.includes('|'), false)
+  assert.equal(isAllowedShapeCommand(FALLBACK_SHAPE_COMMAND, join(root, 'hooks', 'shape.mjs')), true)
 })
 
 test('beforeSubmitPrompt keeps the prompt and repeats the display mode', async () => {

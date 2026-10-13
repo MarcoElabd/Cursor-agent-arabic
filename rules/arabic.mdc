@@ -8,6 +8,10 @@ Keep code, terminal commands, file paths, identifiers and English-only technical
 Prefer bullet lists over markdown tables.
 Do your internal reasoning / thinking in Arabic as well.
 The Cursor CLI draws one character per cell from left to right. Logical Arabic then looks disconnected and reversed.
-Follow the `Arabic display:` line in the session context.
-When it says `native`, or when no shape command is given, write Arabic in normal logical order and do not run a shape command.
-When it says `visual`, compose the reply in normal Arabic, write that whole reply to the `Reply file:` path with the file tool as UTF-8, then run the `Shape command:` exactly. Do not put Arabic in a PowerShell command or pipeline. Windows PowerShell 5.1 would turn it into question marks. After the command succeeds, the user-visible message must be only that stdout, copied exactly, including leading spaces. It must not contain Arabic letters from ء to ي. Disconnected letters such as م ر ح ب ا mean the shaper did not run; that message is wrong. Do not also print the logical Arabic. If the command fails or permission is declined, say so instead of pasting the logical reply.
+Follow the `Arabic display:` line when one is present.
+When it says `native`, write Arabic in normal logical order and do not run a shape command.
+When it says `visual`, or when no Arabic display line is present, you must run the shaper before the user can see the reply. Do not answer with Arabic letters first. Write the reply with the file tool to `$env:TEMP\cursor-arabic-reply.txt`. If the session has a `Shape command:` line, run that exact command. Otherwise run:
+
+node "$env:USERPROFILE\.cursor\plugins\local\arabic\hooks\shape.mjs" "$env:TEMP\cursor-arabic-reply.txt" "$env:TEMP\cursor-arabic-shaped.txt"
+
+Do not put Arabic in that command or in a PowerShell pipeline. Windows PowerShell 5.1 would turn it into question marks. Then read `$env:TEMP\cursor-arabic-shaped.txt`. The user-visible message is only that file, copied exactly, including leading spaces. It must not contain Arabic letters from ء to ي. Disconnected letters such as م ر ح ب ا mean the shaper did not run. Do not also print the logical Arabic. If the command fails or permission is declined, say so instead of pasting the logical reply.

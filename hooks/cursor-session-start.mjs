@@ -48,7 +48,8 @@ function visualDisplay(shapePath, hookInput) {
     `Reply file: ${file}`,
     'The Cursor CLI paints cells left to right. Logical Arabic looks disconnected and reversed there.',
     'Write the full reply to Reply file with the file tool, as UTF-8. Do not create that file in PowerShell, and do not pipe Arabic into Node.',
-    `Shape command: ${shapeCommand(shapePath, file)}`,
-    'After success, the user-visible message is only that stdout, copied exactly, including leading spaces. It must not contain letters from ء to ي.',
+    `Shape command: ${shapeCommand(shapePath, file, process.platform, file.replace(/\.txt$/, '.shaped.txt'))}`,
+    `Shaped file: ${file.replace(/\.txt$/, '.shaped.txt')}`,
+    'Read Shaped file after the command. The user-visible message is only that file, copied exactly. It must not contain letters from ء to ي.',
   ].join('\n')
 }

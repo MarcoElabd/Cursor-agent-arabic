@@ -1,5 +1,5 @@
 import { spawn } from 'node:child_process'
-import { mkdtempSync, writeFileSync } from 'node:fs'
+import { mkdtempSync, readFileSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
@@ -80,8 +80,9 @@ test('shape command prints presentation forms', async () => {
 test('shape command reads a UTF-8 reply file', async () => {
   const dir = mkdtempSync(join(tmpdir(), 'cursor-arabic-'))
   const file = join(dir, 'reply.txt')
+  const shaped = join(dir, 'reply.shaped.txt')
   writeFileSync(file, 'سلام\n', 'utf8')
-  const child = spawn(process.execPath, [join(root, 'hooks', 'shape.mjs'), file], {
+  const child = spawn(process.execPath, [join(root, 'hooks', 'shape.mjs'), file, shaped], {
     env: { ...process.env, COLUMNS: '40', ARABIC_RTL: 'visual' },
     stdio: ['ignore', 'pipe', 'pipe'],
   })
@@ -91,6 +92,7 @@ test('shape command reads a UTF-8 reply file', async () => {
   assert.equal(await new Promise((resolve) => child.on('close', resolve)), 0)
   assert.equal(out.includes('سلام'), false)
   assert.equal(out.includes('ﺳ'), true)
+  assert.equal(readFileSync(shaped, 'utf8'), out)
 })
 
 test('shape command respects native mode', async () => {

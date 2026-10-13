@@ -8,31 +8,44 @@ export function shellQuote(path, platform = process.platform) {
 /** Makes PowerShell decode a native program's stdout as UTF-8. */
 export const UTF8_SETUP = "[Console]::OutputEncoding = $OutputEncoding = [System.Text.UTF8Encoding]::new($false)"
 
+/** Used when the CLI never receives a session Shape command. */
+export const FALLBACK_SHAPE_COMMAND = 'node "$env:USERPROFILE\\.cursor\\plugins\\local\\arabic\\hooks\\shape.mjs" "$env:TEMP\\cursor-arabic-reply.txt" "$env:TEMP\\cursor-arabic-shaped.txt"'
+
 /** Exact command the agent may run. On Windows, UTF-8 is set in the same command. */
-export function shapeCommand(shapePath, filePath, platform = process.platform) {
+export function shapeCommand(shapePath, filePath, platform = process.platform, outPath) {
   let command = `node ${shellQuote(shapePath, platform)}`
   if (filePath) command += ` ${shellQuote(filePath, platform)}`
+  if (outPath) command += ` ${shellQuote(outPath, platform)}`
   if (platform === 'win32') command = `${UTF8_SETUP}; ${command}`
   return command
 }
 
-function unquoteLiteral(token, platform) {
-  if (!token.startsWith("'") || !token.endsWith("'") || token.length < 2) return null
-  const body = token.slice(1, -1)
+function takeQuoted(input, platform) {
+  if (!input.startsWith("'")) return null
   if (platform === 'win32') {
-    if (!/^([^']|'')*$/.test(body)) return null
-    return body.replaceAll("''", "'")
+    let i = 1
+    let value = ''
+    while (i < input.length) {
+      if (input[i] === "'" && input[i + 1] === "'") { value += "'"; i += 2; continue }
+      if (input[i] === "'") return { value, rest: input.slice(i + 1) }
+      value += input[i++]
+    }
+    return null
   }
-  if (body.includes("'")) return null
-  return body
+  const end = input.indexOf("'", 1)
+  if (end < 1) return null
+  return { value: input.slice(1, end), rest: input.slice(end + 1) }
 }
 
 /**
- * True only for this plugin's renderer, alone or with one quoted reply file.
- * On Windows the UTF-8 setup may come first. Pipelines and extra commands are rejected.
+ * True only for this plugin's renderer, with up to two quoted files.
+ * Also allows the fixed PowerShell fallback that writes a shaped file.
+ * Pipelines and extra commands are rejected.
  */
 export function isAllowedShapeCommand(command, shapePath, platform = process.platform) {
-  let rest = command.trim()
+  const trimmed = command.trim()
+  if (trimmed === FALLBACK_SHAPE_COMMAND) return true
+  let rest = trimmed
   const prefix = `${UTF8_SETUP}; `
   if (rest.startsWith(prefix)) {
     if (platform !== 'win32') return false
@@ -41,6 +54,12 @@ export function isAllowedShapeCommand(command, shapePath, platform = process.pla
   const bare = `node ${shellQuote(shapePath, platform)}`
   if (rest === bare) return true
   if (!rest.startsWith(`${bare} `)) return false
-  const file = unquoteLiteral(rest.slice(bare.length + 1), platform)
-  return typeof file === 'string' && file.length > 0 && !/[\r\n]/.test(file)
+  let tail = rest.slice(bare.length + 1)
+  for (let n = 0; n < 2; n++) {
+    const token = takeQuoted(tail, platform)
+    if (!token || token.value.length === 0 || /[\r\n]/.test(token.value)) return false
+    tail = token.rest.trim()
+    if (!tail) return true
+  }
+  return false
 }
