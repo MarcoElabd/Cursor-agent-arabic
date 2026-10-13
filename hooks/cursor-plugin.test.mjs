@@ -123,6 +123,13 @@ test('Windows CLI sessions shape Arabic so cells are not disconnected', async ()
   assert.equal(isAllowedShapeCommand(FALLBACK_SHAPE_COMMAND, join(root, 'hooks', 'shape.mjs')), true)
 })
 
+test('fallback shape command sets UTF-8 before Node so PowerShell does not emit ????', () => {
+  assert.match(FALLBACK_SHAPE_COMMAND, /^\[Console\]::InputEncoding = \[Console\]::OutputEncoding = \$OutputEncoding = \[System\.Text\.UTF8Encoding\]::new\(\$false\); node /)
+  assert.equal(FALLBACK_SHAPE_COMMAND.includes('|'), false)
+  assert.equal(FALLBACK_SHAPE_COMMAND.includes('????'), false)
+  assert.equal(isAllowedShapeCommand(FALLBACK_SHAPE_COMMAND, join(root, 'hooks', 'shape.mjs'), 'win32'), true)
+})
+
 test('beforeSubmitPrompt keeps the prompt and repeats the display mode', async () => {
   const child = spawn(process.execPath, [join(root, 'hooks', 'cursor-session-start.mjs')], {
     env: { ...process.env, ARABIC_RTL: 'visual' },
@@ -203,8 +210,10 @@ test('Windows visual mode shapes a UTF-8 file through PowerShell 5.1', {
   assert.equal(await new Promise((resolve) => hook.on('close', resolve)), 0)
   const body = JSON.parse(context).additional_context
   const file = body.match(/^Reply file: (.+)$/m)?.[1]
+  const shaped = body.match(/^Shaped file: (.+)$/m)?.[1]
   const command = body.match(/^Shape command: (.+)$/m)?.[1]
   assert.ok(file)
+  assert.ok(shaped)
   assert.ok(command)
   assert.equal(command.includes('|'), false)
   writeFileSync(file, 'سلام\n', 'utf8')
@@ -215,7 +224,8 @@ test('Windows visual mode shapes a UTF-8 file through PowerShell 5.1', {
   child.stdout.setEncoding('utf8')
   child.stdout.on('data', (chunk) => { out += chunk })
   assert.equal(await new Promise((resolve) => child.on('close', resolve)), 0)
-  assert.equal(out.trim(), 'ﻡﻼﺳ')
+  assert.equal(out.trim(), 'ok')
+  assert.equal(readFileSync(shaped, 'utf8').trim(), 'ﻡﻼﺳ')
 })
 
 test('Windows shell quoting preserves spaces, apostrophes and dollar signs in paths', {

@@ -50,6 +50,6 @@ function visualDisplay(shapePath, hookInput) {
     'Write the full reply to Reply file with the file tool, as UTF-8. Do not create that file in PowerShell, and do not pipe Arabic into Node.',
     `Shape command: ${shapeCommand(shapePath, file, process.platform, file.replace(/\.txt$/, '.shaped.txt'))}`,
     `Shaped file: ${file.replace(/\.txt$/, '.shaped.txt')}`,
-    'Read Shaped file after the command. The user-visible message is only that file, copied exactly. It must not contain letters from ء to ي.',
+    'After the command, read Shaped file with the file tool. Ignore shell stdout (it is only the ASCII word ok). The user-visible message is only Shaped file, copied exactly. It must not contain letters from ء to ي. Rows of ? mean Arabic went through PowerShell instead of the file path.',
   ].join('\n')
 }
