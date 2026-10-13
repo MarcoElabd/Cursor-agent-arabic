@@ -1,38 +1,59 @@
-# عربي لـ Cursor و Claude Code
+# Cursor بالعربي — Arabic for Cursor
 
-يخليه يرد ويفكر بالعربية، ويسيب الكود والأوامر والمسارات والمصطلحات الإنجليزية كما هي.
+يجعل Cursor يرد ويفكر بالعربية، ويبقي الكود والأوامر والمسارات والمصطلحات الإنجليزية كما هي.
+Makes Cursor reply and think in Arabic, and keeps code, commands, paths, and English technical terms in English.
 
-Makes Cursor and Claude Code reply and think in Arabic, while keeping code, commands, paths, and English technical terms in English.
+نسخة Claude Code ما زالت في نفس المستودع، وسلوكها لم يتغير.
+The Claude Code build is still in this repository, and its behavior is unchanged.
 
-## Cursor
+## التثبيت على Cursor / Install on Cursor
 
-ثبّت المستودع من Cursor: **Customize → Plugins → Add from GitHub**، والصق:
+1. من الشريط الجانبي افتح **Customize**.
+   Open **Customize** in the sidebar.
+2. اختر **From GitHub Repository** والصق المستودع:
+   Choose **From GitHub Repository** and paste the repository:
 
-```text
-MarcoElabd/Cursor-agent-arabic
-```
+   ```text
+   MarcoElabd/Cursor-agent-arabic
+   ```
 
-Cursor يقرأ `.cursor-plugin/marketplace.json` ويثبّت إضافة `arabic`.
+3. ثبّت إضافة **arabic** على نطاق **user**.
+   Install the **arabic** plugin at **user** scope.
+4. ابدأ محادثة Agent جديدة. القاعدة لا تُضاف إلى محادثة مفتوحة من قبل.
+   Start a new Agent chat. The rule is not added to a chat that is already open.
 
-### ماذا يعمل على Cursor
+للتجربة المحلية انسخ المستودع إلى `~/.cursor/plugins/local/arabic` ثم أعد تحميل النافذة من **Developer: Reload Window**، وتأكد أن الإضافة ظاهرة في Customize.
+To try it locally, copy the repository to `~/.cursor/plugins/local/arabic`, run **Developer: Reload Window**, and confirm the plugin shows up in Customize.
 
-| السلوك | كيف |
+## ماذا يفعل / What it does
+
+| | |
 | --- | --- |
-| الرد بالعربية، وباللهجة التي يكتب بها المستخدم | قاعدة دائمة في `rules/arabic.mdc` |
-| التفكير بالعربية | نفس القاعدة |
-| الكود والأوامر والمسارات والمصطلحات الإنجليزية تبقى بالإنجليزية داخل `` ` `` | نفس القاعدة |
-| القوائم النقطية بدل الجداول | نفس القاعدة |
-| نفس التعليمات في بداية الجلسة | `sessionStart` يحقن نص القاعدة في `additional_context` |
+| الرد | بالعربية الفصحى، أو بلهجة المستخدم إن كتب بها. Replies in Modern Standard Arabic, or in the user's dialect. |
+| التفكير | بالعربية. Reasoning stays in Arabic. |
+| الكود | الأوامر والمسارات والمعرّفات والمصطلحات الإنجليزية تبقى بالإنجليزية داخل `` ` ``. Commands, paths, identifiers, and English-only terms stay in English, inside backticks. |
+| التنسيق | قوائم نقطية بدل الجداول. Bullet lists instead of markdown tables. |
+| اتجاه النص | اكتب العربية بالترتيب المنطقي. شات Cursor يعرضها بشكل صحيح، ولا تُعكس الحروف. Write Arabic in logical order. Cursor's chat already displays it; letters are not reordered. |
 
-القاعدة هي المسار المضمون: Cursor يضيفها لسياق الوكيل من أول رسالة، وفي جلسات Cloud Agent أيضًا. الـ hook يعيد نفس النص للجلسات التي يصلها `sessionStart`. لو `node` غير موجود في `PATH`، الـ hook لا يوقف الجلسة والقاعدة تظل شغالة.
+التعليمات في `rules/arabic.mdc` وتُطبَّق دائمًا. عند بداية الجلسة يعيد `hooks/cursor-session-start.mjs` نفس النص إلى Cursor. لو `node` غير موجود في `PATH` تظل القاعدة وحدها كافية.
+The instructions live in `rules/arabic.mdc` and always apply. At session start, `hooks/cursor-session-start.mjs` sends the same text to Cursor. If `node` is not on `PATH`, the rule alone is enough.
 
-### ما لم يُنقل كما هو، ولماذا
+لتغيير لغة التفكير إلى الإنجليزية، عدّل سطر التفكير في `rules/arabic.mdc`.
+To make reasoning English, edit the thinking line in `rules/arabic.mdc`.
 
-نسخة Claude Code كانت تشتغل عبر محرك `claude-code` داخل `hooks/register.tsx`. Cursor لا يشغّل هذا الملف.
+## ما الذي تغيّر عن نسخة Claude Code / What changed from Claude Code
 
-- **ترجمة قائمة `/config` ووصف الأوامر:** Claude Code يعطي الإضافة `command.describe` و `config.describe` و `model.complete`. Cursor ليس فيه هذه الأحداث، فترجمة القوائم الديناميكية لا يمكن تنفيذها. أسماء الأوامر والقيم (`true` / `false`) كانت تبقى إنجليزية هناك أيضًا.
-- **إصلاح اتجاه النص `visual`:** كان يعيد ترتيب الحروف قبل رسمها في طرفية Claude Code التي لا تدعم RTL. شات Cursor يعرض العربية بالترتيب المنطقي بشكل صحيح. إعادة الترتيب هنا كانت ستظهر النص مقلوبًا، لذلك القاعدة تطلب كتابة العربية بالترتيب المنطقي. كود التشكيل والترتيب في `hooks/bidi.ts` بقي لنسخة Claude Code فقط.
-- **إعدادات `/config` (`rtl` و `menus` و `thinking`):** خاصة بـ Claude Code. على Cursor السلوك هو الافتراضي الذي كان شغالًا: رد عربي، تفكير عربي. لتغيير التفكير إلى الإنجليزية، عدّل السطر الخاص به في `rules/arabic.mdc`.
+Cursor لا يشغّل `hooks/register.tsx`، لأن هذا الملف مربوط بمحرك Claude Code. السلوك انتقل كالتالي:
+Cursor does not run `hooks/register.tsx`, because that file is tied to the Claude Code engine. The behavior moved like this:
+
+- **الرد والتفكير:** من حدث `prompt.compose` إلى القاعدة الدائمة `rules/arabic.mdc`، ونفس النص يُحقن عند `sessionStart`.
+  **Replies and thinking:** from the `prompt.compose` event to the always-on rule `rules/arabic.mdc`, with the same text injected on `sessionStart`.
+- **ترجمة قائمة `/config` ووصف الأوامر:** لم تُنقل. Cursor ليس فيه `command.describe` ولا `config.describe`.
+  **`/config` menu and command descriptions:** not ported. Cursor has no `command.describe` or `config.describe` events.
+- **إصلاح RTL البصري:** لم يُطبَّق على الشات. كان يعيد ترتيب الحروف لطرفيات Claude Code التي تعرض العربية مقلوبة، وهذا سيعكس النص في Cursor. الكود بقي في `hooks/bidi.ts` لنسخة Claude Code.
+  **Visual RTL fix:** not applied to chat. It reordered letters for Claude Code terminals that show Arabic reversed, which would reverse text in Cursor. The code remains in `hooks/bidi.ts` for Claude Code.
+- **إعدادات `/config`:** `rtl` و `menus` و `thinking` خاصة بـ Claude Code. على Cursor الافتراضي هو رد عربي وتفكير عربي.
+  **`/config` settings:** `rtl`, `menus`, and `thinking` belong to Claude Code. On Cursor the default is Arabic replies and Arabic thinking.
 
 ## Claude Code
 
@@ -43,10 +64,12 @@ Cursor يقرأ `.cursor-plugin/marketplace.json` ويثبّت إضافة `arabi
 ```
 
 أجب `y` لإضافة المتجر، ثم اختر نطاق **user**.
+Answer `y` to add the marketplace, then pick the **user** scope.
 
-هذه النسخة لم يتغير سلوكها. `hooks/hooks.json` ما زال يحمّل `hooks/register.tsx`.
+`hooks/hooks.json` ما زال يحمّل `hooks/register.tsx`.
+`hooks/hooks.json` still loads `hooks/register.tsx`.
 
-### الإعدادات (`/config` → arabic)
+### الإعدادات / Settings (`/config` → arabic)
 
 | Setting | Values | Meaning |
 | --- | --- | --- |
@@ -68,18 +91,25 @@ config.bidi_enabled = true
 config.bidi_direction = 'AutoLeftToRight'
 ```
 
-### حدود معروفة في Claude Code / Known limits
+### حدود معروفة / Known limits
 
+في وضع `visual` فقط:
 In `visual` mode only:
 
-- The prompt box while you type and the thinking view (ctrl+o) can't be hooked, so Arabic there stays as your terminal shows it.
-- Copying Arabic from the screen copies the reordered text; the saved conversation is untouched.
-- Arabic replies are drawn as plain lines: headings bold, code blocks kept, `**` and `` ` `` markers dropped. Tashkeel is dropped.
+- صندوق الكتابة أثناء الإدخال وعرض التفكير (ctrl+o) لا يمكن ربطهما، فتبقى العربية كما تعرضها الطرفية.
+  The prompt box while you type and the thinking view (ctrl+o) can't be hooked, so Arabic there stays as your terminal shows it.
+- نسخ العربية من الشاشة ينسخ النص بعد إعادة ترتيبه، والمحادثة المحفوظة لا تتغير.
+  Copying Arabic from the screen copies the reordered text; the saved conversation is untouched.
+- ردود العربية تُرسم كسطور عادية: العناوين عريضة، وكتل الكود تبقى، وعلامات `**` و `` ` `` تُحذف. التشكيل يُحذف.
+  Arabic replies are drawn as plain lines: headings bold, code blocks kept, `**` and `` ` `` markers dropped. Tashkeel is dropped.
 
+دائمًا:
 Always:
 
-- Menu translation runs once in the background with a small model (Haiku) and is cached; until it finishes, or for anything new, the menus show English. Setting values (`true`/`false`, option names) and command names stay English.
+- ترجمة القوائم تعمل مرة في الخلفية بنموذج صغير (Haiku) وتُخزَّن. إلى أن تنتهي، أو لأي نص جديد، تظهر القوائم بالإنجليزية. قيم الإعدادات (`true`/`false` وأسماء الخيارات) وأسماء الأوامر تبقى إنجليزية.
+  Menu translation runs once in the background with a small model (Haiku) and is cached. Until it finishes, or for anything new, the menus show English. Setting values (`true`/`false`, option names) and command names stay English.
 
 ## الرخصة / License
 
+MIT — انظر [LICENSE](LICENSE).
 MIT — see [LICENSE](LICENSE).
