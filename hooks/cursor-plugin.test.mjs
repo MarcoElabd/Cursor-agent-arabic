@@ -123,6 +123,13 @@ test('Windows CLI sessions shape Arabic so cells are not disconnected', async ()
   assert.equal(isAllowedShapeCommand(FALLBACK_SHAPE_COMMAND, join(root, 'hooks', 'shape.mjs')), true)
 })
 
+test('fallback shape command sets UTF-8 before Node so PowerShell does not emit ????', () => {
+  assert.match(FALLBACK_SHAPE_COMMAND, /^\[Console\]::InputEncoding = \[Console\]::OutputEncoding = \$OutputEncoding = \[System\.Text\.UTF8Encoding\]::new\(\$false\); node /)
+  assert.equal(FALLBACK_SHAPE_COMMAND.includes('|'), false)
+  assert.equal(FALLBACK_SHAPE_COMMAND.includes('????'), false)
+  assert.equal(isAllowedShapeCommand(FALLBACK_SHAPE_COMMAND, join(root, 'hooks', 'shape.mjs'), 'win32'), true)
+})
+
 test('beforeSubmitPrompt keeps the prompt and repeats the display mode', async () => {
   const child = spawn(process.execPath, [join(root, 'hooks', 'cursor-session-start.mjs')], {
     env: { ...process.env, ARABIC_RTL: 'visual' },

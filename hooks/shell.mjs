@@ -5,11 +5,11 @@ export function shellQuote(path, platform = process.platform) {
   return `'${normalized.replaceAll("'", "'\"'\"'")}'`
 }
 
-/** Makes PowerShell decode a native program's stdout as UTF-8. */
-export const UTF8_SETUP = "[Console]::OutputEncoding = $OutputEncoding = [System.Text.UTF8Encoding]::new($false)"
+/** Makes PowerShell encode/decode Node stdin/stdout as UTF-8 (not the OEM page that becomes ????). */
+export const UTF8_SETUP = '[Console]::InputEncoding = [Console]::OutputEncoding = $OutputEncoding = [System.Text.UTF8Encoding]::new($false)'
 
-/** Used when the CLI never receives a session Shape command. */
-export const FALLBACK_SHAPE_COMMAND = 'node "$env:USERPROFILE\\.cursor\\plugins\\local\\arabic\\hooks\\shape.mjs" "$env:TEMP\\cursor-arabic-reply.txt" "$env:TEMP\\cursor-arabic-shaped.txt"'
+/** Used when the CLI never receives a session Shape command. UTF-8 first so stdout is not ????. */
+export const FALLBACK_SHAPE_COMMAND = `${UTF8_SETUP}; node "$env:USERPROFILE\\.cursor\\plugins\\local\\arabic\\hooks\\shape.mjs" "$env:TEMP\\cursor-arabic-reply.txt" "$env:TEMP\\cursor-arabic-shaped.txt"`
 
 /** Exact command the agent may run. On Windows, UTF-8 is set in the same command. */
 export function shapeCommand(shapePath, filePath, platform = process.platform, outPath) {

@@ -1,7 +1,7 @@
 {
   "name": "arabic",
   "displayName": "Cursor بالعربي",
-  "version": "2.2.0",
+  "version": "2.2.1",
   "description": "Arabic for the Cursor CLI: replies and thinking in Arabic, shaped into presentation forms so PowerShell cells do not show disconnected reversed letters.",
   "author": {
     "name": "Abo-Eyad"

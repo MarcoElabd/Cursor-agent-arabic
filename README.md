@@ -40,11 +40,22 @@ To make reasoning English, edit the thinking line in `rules/arabic.mdc`.
 
 ## PowerShell
 
-الـ CLI على PowerShell بيرسم كل حرف لوحده من الشمال لليمين. العربي العادي يظهر مقطّع ومقلوب، زي شرح `cli-config.json` لما الحروف تبقى مفصولة. على Windows الرد يتكتب في ملف UTF-8، و`node` يشكّله، والنص الظاهر هو ناتج الأمر بس.
-The CLI on PowerShell paints each character from left to right. Normal Arabic looks disconnected and reversed, the way a `cli-config.json` explanation looks when the letters are separated. On Windows the reply is written to a UTF-8 file, `node` shapes it, and the visible text is only that command's output.
+الـ CLI على PowerShell بيرسم كل حرف لوحده من الشمال لليمين. العربي العادي يظهر مقطّع ومقلوب، زي شرح `cli-config.json` لما الحروف تبقى مفصولة. على Windows الرد يتكتب في ملف UTF-8 بأداة الملفات (مش من PowerShell)، و`node` يشكّله، والنص الظاهر يُنسخ من ملف الناتج المتشكل.
+The CLI on PowerShell paints each character from left to right. Normal Arabic looks disconnected and reversed, the way a `cli-config.json` explanation looks when the letters are separated. On Windows the reply is written to a UTF-8 file with the file tool (not from PowerShell), `node` shapes it, and the visible text is copied from the shaped output file.
 
 متبعتش العربي في أنبوب PowerShell. Windows PowerShell 5.1 بيحوّله إلى `????`.
 Do not pipe Arabic through PowerShell. Windows PowerShell 5.1 turns it into `????`.
+
+لو شايف صفوف `????` كتير: حدّث الإضافة، افتح جلسة `agent` جديدة، واتأكد إن الأمر فيه ضبط UTF-8 وإن الرد بيتعمل من الملف مش من pipe.
+If you see rows of `????`: update the plugin, start a new `agent` session, and confirm the command sets UTF-8 and the reply comes from the file, not a pipe.
+
+ثبّت UTF-8 في ملف الـ profile عشان أي جلسة PowerShell:
+To pin UTF-8 in your PowerShell profile for every session:
+
+```powershell
+if (!(Test-Path $PROFILE)) { New-Item -Path $PROFILE -ItemType File -Force }
+Add-Content $PROFILE '[Console]::InputEncoding = [Console]::OutputEncoding = $OutputEncoding = [System.Text.UTF8Encoding]::new($false)'
+```
 
 السؤال عن `shape.mjs` مش هيظهر طول ما الوكيل مش بيحاول يشغّل الأمر. القاعدة القديمة كانت بتقوله ما يشغّلوش لو سطر الجلسة مش واصل، وده اللي بيحصل في الـ CLI. دلوقتي الأمر مكتوب في القاعدة نفسها، فالمفروض يشغّل `node` حتى لو مفيش خطاف جلسة.
 The question about `shape.mjs` never appears while the agent does not try to run it. The old rule told it not to run the command when the session line was missing, which is what happens in the CLI. The command is now in the rule, so it should start `node` even without a session hook.
