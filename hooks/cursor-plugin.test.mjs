@@ -36,6 +36,7 @@ test('Arabic rule is always applied', () => {
     'Arabic display:',
     FALLBACK_SHAPE_COMMAND,
     'or when no Arabic display line is present',
+    'The Cursor desktop app (Agent, Ask, and Editor) draws Arabic itself.',
   ]) {
     assert.ok(raw.includes(line), line)
   }
@@ -99,6 +100,26 @@ test('sessionStart hook emits the rule body as additional_context', async () => 
   assert.match(parsed.additional_context, /^Reply file: .+\.txt$/m)
   assert.equal(parsed.additional_context.includes('|'), false)
   assert.equal(parsed.continue, undefined)
+})
+
+test('Cursor app sessions keep logical Arabic', async () => {
+  const env = { ...process.env, OS: 'Windows_NT' }
+  for (const key of ['ARABIC_RTL', 'TERM', 'TERM_PROGRAM', 'WT_SESSION', 'ALACRITTY_WINDOW_ID', 'CURSOR_CLI', 'CURSOR_AGENT']) {
+    delete env[key]
+  }
+  const child = spawn(process.execPath, [join(root, 'hooks', 'cursor-session-start.mjs')], {
+    env,
+    stdio: ['pipe', 'pipe', 'pipe'],
+  })
+  let out = ''
+  child.stdout.setEncoding('utf8')
+  child.stdout.on('data', (chunk) => { out += chunk })
+  child.stdin.end(JSON.stringify({ session_id: 'ide', composer_mode: 'agent', hook_event_name: 'sessionStart' }))
+  assert.equal(await new Promise((resolve) => child.on('close', resolve)), 0)
+  const parsed = JSON.parse(out)
+  assert.match(parsed.additional_context, /Arabic display: native/)
+  assert.match(parsed.additional_context, /Do not run shape\.mjs/)
+  assert.equal(/^Shape command: /m.test(parsed.additional_context), false)
 })
 
 test('Windows CLI sessions shape Arabic so cells are not disconnected', async () => {

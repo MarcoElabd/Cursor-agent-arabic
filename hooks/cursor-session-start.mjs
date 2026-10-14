@@ -31,7 +31,7 @@ const display = wantsVisual(process.env)
   ? visualDisplay(shape, input)
   : [
       'Arabic display: native',
-      'The user-visible reply is normal Arabic. Do not run shape.mjs.',
+      'This is the Cursor desktop app, or a terminal that already draws Arabic. Write normal logical Arabic. Do not run shape.mjs.',
     ].join('\n')
 
 const additional_context = `${body}\n\n${display}`

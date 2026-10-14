@@ -30,13 +30,21 @@ To try it locally, copy the repository to `~/.cursor/plugins/local/arabic`, run 
 | التفكير | بالعربية. Reasoning stays in Arabic. |
 | الكود | الأوامر والمسارات والمعرّفات والمصطلحات الإنجليزية تبقى بالإنجليزية داخل `` ` ``. Commands, paths, identifiers, and English-only terms stay in English, inside backticks. |
 | التنسيق | قوائم نقطية بدل الجداول. Bullet lists instead of markdown tables. |
-| اتجاه النص | الـ CLI بيرسم كل حرف في خانة من الشمال لليمين، فالعربي العادي يظهر مقطّع ومقلوب. الرد يتشكّل قبل العرض. The CLI paints each character in a cell from left to right, so normal Arabic looks disconnected and reversed. The reply is shaped before display. |
+| اتجاه النص | برنامج Cursor بيعرض العربي طبيعي. الـ CLI بيرسم كل حرف في خانة، فالرد هناك بيتشكّل قبل العرض. The Cursor app shows logical Arabic. The CLI paints each character in a cell, so that reply is shaped before display. |
 
 التعليمات في `rules/arabic.mdc` وتُطبَّق دائمًا. عند بداية الجلسة يعيد `hooks/cursor-session-start.mjs` نفس النص إلى Cursor. لو `node` غير موجود في `PATH` تظل القاعدة وحدها كافية.
 The instructions live in `rules/arabic.mdc` and always apply. At session start, `hooks/cursor-session-start.mjs` sends the same text to Cursor. If `node` is not on `PATH`, the rule alone is enough.
 
 لتغيير لغة التفكير إلى الإنجليزية، عدّل سطر التفكير في `rules/arabic.mdc`.
 To make reasoning English, edit the thinking line in `rules/arabic.mdc`.
+
+## برنامج Cursor / The Cursor app
+
+نفس الإضافة. في شات Agent أو Ask جوه البرنامج اكتب عربي عادي. البرنامج بيرسم الحروف صح، وتشغيل `shape.mjs` هنا بيقلبها.
+Same plugin. In the Agent or Ask chat inside the app, write normal Arabic. The app draws the letters, and running `shape.mjs` there reverses them.
+
+ثبّت الإضافة من Customize زي الخطوات فوق، وبعدين ابدأ محادثة جديدة. مفيش متغير PowerShell للبرنامج.
+Install from Customize as above, then start a new chat. The app does not use the PowerShell variable.
 
 ## PowerShell
 

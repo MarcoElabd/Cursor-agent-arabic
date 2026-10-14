@@ -1,5 +1,5 @@
 ---
-description: Reply and think in Arabic, and shape it for the Cursor CLI cell screen.
+description: Reply and think in Arabic. The Cursor app shows logical Arabic; the CLI shapes it.
 alwaysApply: true
 ---
 
@@ -7,10 +7,11 @@ Always answer the user in Arabic (Modern Standard Arabic, or the dialect the use
 Keep code, terminal commands, file paths, identifiers and English-only technical terms in English, inside backticks.
 Prefer bullet lists over markdown tables.
 Do your internal reasoning / thinking in Arabic as well.
+The Cursor desktop app (Agent, Ask, and Editor) draws Arabic itself. In that chat, write normal logical Arabic and do not run shape.mjs, even when a session line says `visual`. Shaped presentation forms look reversed in the app.
 The Cursor CLI draws one character per cell from left to right. Logical Arabic then looks disconnected and reversed.
 Follow the `Arabic display:` line when one is present.
 When it says `native`, write Arabic in normal logical order and do not run a shape command.
-When it says `visual`, or when no Arabic display line is present, you must run the shaper before the user can see the reply. Do not answer with Arabic letters first. Write the reply with the file tool to `$env:TEMP\cursor-arabic-reply.txt`. If the session has a `Shape command:` line, run that exact command. Otherwise run:
+When it says `visual`, or when no Arabic display line is present and the reply is shown in the Cursor CLI, you must run the shaper before the user can see the reply. Do not answer with Arabic letters first. Write the reply with the file tool to `$env:TEMP\cursor-arabic-reply.txt`. If the session has a `Shape command:` line, run that exact command. Otherwise run:
 
 node "$env:USERPROFILE\.cursor\plugins\local\arabic\hooks\shape.mjs" "$env:TEMP\cursor-arabic-reply.txt" "$env:TEMP\cursor-arabic-shaped.txt"
 

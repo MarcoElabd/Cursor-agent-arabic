@@ -109,14 +109,18 @@ export const lacksBidi = (env) =>
   /kitty|alacritty/.test(env.TERM ?? '') ||
   env.ALACRITTY_WINDOW_ID !== undefined
 
+const cellScreen = (env) =>
+  Boolean(env.TERM || env.WT_SESSION || env.TERM_PROGRAM || env.CURSOR_CLI || env.CURSOR_AGENT)
+
 /**
- * The Cursor CLI paints one character per cell from left to right, so logical
- * Arabic looks disconnected and reversed there. Shape on Windows unless the
- * user opts out. Other systems shape only for terminals known to lack BiDi.
+ * The Cursor desktop app draws Arabic itself, so its chat stays logical.
+ * The CLI paints one character per cell. Shape there on Windows, and on any
+ * other system only when that terminal is known to lack BiDi.
  */
 export function wantsVisual(env, platform = process.platform) {
   if (env.ARABIC_RTL === 'native') return false
   if (env.ARABIC_RTL === 'visual') return true
+  if (!cellScreen(env)) return false
   if (platform === 'win32' || env.OS === 'Windows_NT') return true
   return lacksBidi(env)
 }
