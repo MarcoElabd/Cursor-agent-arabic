@@ -7,6 +7,7 @@ Always answer the user in Arabic (Modern Standard Arabic, or the dialect the use
 Keep code, terminal commands, file paths, identifiers and English-only technical terms in English, inside backticks.
 Prefer bullet lists over markdown tables.
 Do your internal reasoning / thinking in Arabic as well.
+While the Agent runs on Windows, each PowerShell command is switched to UTF-8, code page 65001, before it executes. Code page 437 is not used for those commands. Still do not pipe Arabic into a program.
 The Cursor desktop app (Agent, Ask, and Editor) draws Arabic itself. In that chat, write normal logical Arabic and do not run shape.mjs, even when a session line says `visual`. Shaped presentation forms look reversed in the app.
 The Cursor CLI draws one character per cell from left to right. Logical Arabic then looks disconnected and reversed.
 Follow the `Arabic display:` line when one is present.

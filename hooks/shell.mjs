@@ -5,8 +5,27 @@ export function shellQuote(path, platform = process.platform) {
   return `'${normalized.replaceAll("'", "'\"'\"'")}'`
 }
 
-/** Makes PowerShell decode a native program's stdout as UTF-8. */
-export const UTF8_SETUP = "[Console]::OutputEncoding = $OutputEncoding = [System.Text.UTF8Encoding]::new($false)"
+/** Switches the console off code page 437 before PowerShell encodes a native program. */
+export const CHCP_UTF8 = 'chcp 65001 > $null'
+
+/** Makes PowerShell send and read Arabic as UTF-8 instead of code page 437. */
+export const UTF8_SETUP = "[Console]::InputEncoding = [Console]::OutputEncoding = $OutputEncoding = [System.Text.UTF8Encoding]::new($false)"
+
+/** Prefixed to Agent shell commands on Windows. */
+export const POWERSHELL_UTF8_PREFIX = `${CHCP_UTF8}; ${UTF8_SETUP}; `
+
+/** Put an Agent PowerShell command on UTF-8. Other platforms are unchanged. */
+export function withPowerShellUtf8(command, platform = process.platform) {
+  if (platform !== 'win32') return command
+  const trimmed = command.trim()
+  if (!trimmed || trimmed.startsWith(POWERSHELL_UTF8_PREFIX)) return trimmed || command
+  if (trimmed.startsWith(`${UTF8_SETUP}; `)) return `${CHCP_UTF8}; ${trimmed}`
+  if (trimmed.startsWith(`${CHCP_UTF8}; `)) {
+    const rest = trimmed.slice(`${CHCP_UTF8}; `.length).trim()
+    return `${POWERSHELL_UTF8_PREFIX}${rest}`
+  }
+  return `${POWERSHELL_UTF8_PREFIX}${trimmed}`
+}
 
 /** Used when the CLI never receives a session Shape command. */
 export const FALLBACK_SHAPE_COMMAND = 'node "$env:USERPROFILE\\.cursor\\plugins\\local\\arabic\\hooks\\shape.mjs" "$env:TEMP\\cursor-arabic-reply.txt" "$env:TEMP\\cursor-arabic-shaped.txt"'
@@ -16,7 +35,7 @@ export function shapeCommand(shapePath, filePath, platform = process.platform, o
   let command = `node ${shellQuote(shapePath, platform)}`
   if (filePath) command += ` ${shellQuote(filePath, platform)}`
   if (outPath) command += ` ${shellQuote(outPath, platform)}`
-  if (platform === 'win32') command = `${UTF8_SETUP}; ${command}`
+  if (platform === 'win32') command = `${POWERSHELL_UTF8_PREFIX}${command}`
   return command
 }
 
@@ -43,14 +62,13 @@ function takeQuoted(input, platform) {
  * Pipelines and extra commands are rejected.
  */
 export function isAllowedShapeCommand(command, shapePath, platform = process.platform) {
-  const trimmed = command.trim()
-  if (trimmed === FALLBACK_SHAPE_COMMAND) return true
-  let rest = trimmed
-  const prefix = `${UTF8_SETUP}; `
-  if (rest.startsWith(prefix)) {
+  let rest = command.trim()
+  if (platform === 'win32' && rest.startsWith(`${CHCP_UTF8}; `)) rest = rest.slice(`${CHCP_UTF8}; `.length).trim()
+  if (rest.startsWith(`${UTF8_SETUP}; `)) {
     if (platform !== 'win32') return false
-    rest = rest.slice(prefix.length).trim()
+    rest = rest.slice(`${UTF8_SETUP}; `.length).trim()
   }
+  if (rest === FALLBACK_SHAPE_COMMAND) return true
   const bare = `node ${shellQuote(shapePath, platform)}`
   if (rest === bare) return true
   if (!rest.startsWith(`${bare} `)) return false

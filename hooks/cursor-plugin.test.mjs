@@ -4,7 +4,7 @@ import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { fileURLToPath } from 'node:url'
 import { dirname, join } from 'node:path'
-import { FALLBACK_SHAPE_COMMAND, isAllowedShapeCommand, shapeCommand, shellQuote } from './shell.mjs'
+import { CHCP_UTF8, FALLBACK_SHAPE_COMMAND, isAllowedShapeCommand, POWERSHELL_UTF8_PREFIX, shapeCommand, shellQuote, withPowerShellUtf8 } from './shell.mjs'
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..')
 const readJson = (path) => JSON.parse(readFileSync(join(root, path), 'utf8'))
@@ -48,6 +48,8 @@ test('sessionStart hook runs the Cursor script', () => {
   assert.equal(hooks.hooks.sessionStart[0].command, 'node ./hooks/cursor-session-start.mjs')
   assert.equal(hooks.hooks.beforeSubmitPrompt[0].command, 'node ./hooks/cursor-session-start.mjs')
   assert.equal(hooks.hooks.beforeShellExecution[0].command, 'node ./hooks/allow-shape.mjs')
+  assert.equal(hooks.hooks.preToolUse[0].command, 'node ./hooks/powershell-utf8.mjs')
+  assert.equal(hooks.hooks.preToolUse[0].matcher, 'Shell')
 })
 
 test('permission hook allows the standalone local shape command', async () => {
@@ -162,6 +164,40 @@ test('beforeSubmitPrompt keeps the prompt and repeats the display mode', async (
   assert.equal(parsed.continue, true)
   assert.match(parsed.additional_context, /Arabic display: visual/)
   assert.match(parsed.additional_context, /cursor-arabic-chat-1\.txt/)
+})
+
+test('Agent PowerShell commands switch off code page 437', () => {
+  const wrapped = withPowerShellUtf8('git status', 'win32')
+  assert.equal(wrapped, `${POWERSHELL_UTF8_PREFIX}git status`)
+  assert.equal(wrapped.startsWith(`${CHCP_UTF8}; `), true)
+  assert.equal(withPowerShellUtf8(wrapped, 'win32'), wrapped)
+  assert.equal(withPowerShellUtf8('git status', 'linux'), 'git status')
+  const shaped = withPowerShellUtf8(FALLBACK_SHAPE_COMMAND, 'win32')
+  assert.equal(isAllowedShapeCommand(shaped, 'C:/unused/shape.mjs', 'win32'), true)
+  assert.equal(isAllowedShapeCommand(`'سلام' | ${wrapped}`, 'C:/unused/shape.mjs', 'win32'), false)
+})
+
+test('Agent shell hook rewrites a Windows PowerShell command and does not approve it', async () => {
+  const child = spawn(process.execPath, [join(root, 'hooks', 'powershell-utf8.mjs')], {
+    env: { ...process.env },
+    stdio: ['pipe', 'pipe', 'pipe'],
+  })
+  let out = ''
+  child.stdout.setEncoding('utf8')
+  child.stdout.on('data', (chunk) => { out += chunk })
+  child.stdin.end(JSON.stringify({
+    tool_name: 'Shell',
+    tool_input: { command: 'git status', working_directory: 'C:/repo' },
+  }))
+  assert.equal(await new Promise((resolve) => child.on('close', resolve)), 0)
+  const parsed = JSON.parse(out)
+  assert.equal(parsed.permission, 'ask')
+  if (process.platform === 'win32') {
+    assert.equal(parsed.updated_input.command, `${POWERSHELL_UTF8_PREFIX}git status`)
+    assert.equal(parsed.updated_input.working_directory, 'C:/repo')
+  } else {
+    assert.equal(parsed.updated_input, undefined)
+  }
 })
 
 test('Windows shape command reads a UTF-8 file and never takes Arabic from the pipeline', () => {

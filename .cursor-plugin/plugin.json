@@ -1,8 +1,8 @@
 {
   "name": "arabic",
   "displayName": "Cursor بالعربي",
-  "version": "2.3.0",
-  "description": "Arabic for Cursor: the desktop app shows logical Arabic, and the CLI shapes it so PowerShell cells are not disconnected.",
+  "version": "2.4.0",
+  "description": "Arabic for the Cursor Agent: PowerShell commands use UTF-8 instead of code page 437, and the CLI shapes Arabic cells.",
   "author": {
     "name": "Abo-Eyad"
   },

@@ -32,6 +32,7 @@ const display = wantsVisual(process.env)
   : [
       'Arabic display: native',
       'This is the Cursor desktop app, or a terminal that already draws Arabic. Write normal logical Arabic. Do not run shape.mjs.',
+      'On Windows the Agent sets PowerShell to UTF-8 (code page 65001) before each shell command.',
     ].join('\n')
 
 const additional_context = `${body}\n\n${display}`

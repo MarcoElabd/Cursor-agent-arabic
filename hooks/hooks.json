@@ -11,6 +11,12 @@
         "command": "node ./hooks/cursor-session-start.mjs"
       }
     ],
+    "preToolUse": [
+      {
+        "command": "node ./hooks/powershell-utf8.mjs",
+        "matcher": "Shell"
+      }
+    ],
     "beforeShellExecution": [
       {
         "command": "node ./hooks/allow-shape.mjs",

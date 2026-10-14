@@ -48,6 +48,9 @@ Install from Customize as above, then start a new chat. The app does not use the
 
 ## PowerShell
 
+وأنت شغال على الـ Agent، الإضافة بتظبط PowerShell قبل كل أمر: `chcp 65001` وبعدين UTF-8. صفحة 437 مش بتستخدم في أوامر الوكيل، فالعربي مش بيتحول إلى `????`. موافقة Cursor على الأمر نفسه لسه موجودة.
+While you use the Agent, the plugin sets PowerShell before each command: `chcp 65001`, then UTF-8. Code page 437 is not used for the agent's commands, so Arabic is not turned into `????`. Cursor's own command approval still applies.
+
 الـ CLI على PowerShell بيرسم كل حرف لوحده من الشمال لليمين. العربي العادي يظهر مقطّع ومقلوب، زي شرح `cli-config.json` لما الحروف تبقى مفصولة. على Windows الرد يتكتب في ملف UTF-8، و`node` يشكّله، والنص الظاهر هو ناتج الأمر بس.
 The CLI on PowerShell paints each character from left to right. Normal Arabic looks disconnected and reversed, the way a `cli-config.json` explanation looks when the letters are separated. On Windows the reply is written to a UTF-8 file, `node` shapes it, and the visible text is only that command's output.
 
